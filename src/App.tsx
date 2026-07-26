@@ -144,7 +144,10 @@ export default function App() {
                     ? 'bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs'
                     : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)]'
                 }`}
-                onClick={() => setCurrentPage(item.id)}
+                onClick={() => {
+                  setCurrentPage(item.id);
+                  if (item.id === 'practice') setPracticeFilter({});
+                }}
               >
                 {item.label}
               </button>
@@ -200,7 +203,7 @@ export default function App() {
                       ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                       : 'text-[var(--color-text-secondary)] hover:bg-black/5 dark:hover:bg-white/5'
                   }`}
-                  onClick={() => { setCurrentPage(item.id); setMenuOpen(false); }}
+                  onClick={() => { setCurrentPage(item.id); if (item.id === 'practice') setPracticeFilter({}); setMenuOpen(false); }}
                 >
                   {item.label}
                 </button>
