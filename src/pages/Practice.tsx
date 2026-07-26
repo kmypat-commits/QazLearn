@@ -18,7 +18,6 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
   const [sessionSize, setSessionSize] = useState<number>(10);
   const [onlyDifficult, setOnlyDifficult] = useState(false);
   const [onlyErrors, setOnlyErrors] = useState(false);
-  const [shuffled, setShuffled] = useState(true);
   const [smartSelect, setSmartSelect] = useState(true);
 
   const [sessionEntries, setSessionEntries] = useState<DictionaryEntry[]>([]);
@@ -45,7 +44,12 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
     }
 
     if (onlyDifficult) {
-      pool = pool.filter(e => e.difficulty >= 3);
+      pool = pool.filter(e => {
+        const p = progress[e.id];
+        if (!p || p.attempts === 0) return false;
+        const accuracy = p.correctAnswers / p.attempts;
+        return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
+      });
     }
 
     if (onlyErrors) {
@@ -58,11 +62,10 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
         const pb = progress[b.id];
         const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
         const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
-        return (weightB + Math.random() * 0.5) - (weightA + Math.random() * 0.5);
+        return (weightB + Math.random() * 2) - (weightA + Math.random() * 2);
       });
-    } else if (shuffled) {
-      pool = [...pool].sort(() => Math.random() - 0.5);
     }
+    pool = [...pool].sort(() => Math.random() - 0.5);
 
     const size = sessionSize === 0 ? pool.length : Math.min(sessionSize, pool.length);
     const selected = pool.slice(0, size);
@@ -77,7 +80,7 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
     setArrangedWords([]);
     setPhraseChecked(false);
     setPhraseCorrect(false);
-  }, [entries, onlyDifficult, onlyErrors, shuffled, smartSelect, sessionSize, errorEntries, progress]);
+  }, [entries, onlyDifficult, onlyErrors, smartSelect, sessionSize, errorEntries, progress]);
 
   useEffect(() => {
     startSession();
@@ -285,10 +288,6 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
           <label className="flex items-center gap-1 text-sm cursor-pointer">
             <input type="checkbox" checked={smartSelect} onChange={e => setSmartSelect(e.target.checked)} />
             Умный подбор
-          </label>
-          <label className="flex items-center gap-1 text-sm cursor-pointer">
-            <input type="checkbox" checked={shuffled} onChange={e => setShuffled(e.target.checked)} disabled={smartSelect} />
-            Перемешать
           </label>
           <label className="flex items-center gap-1 text-sm cursor-pointer">
             <input type="checkbox" checked={onlyDifficult} onChange={e => setOnlyDifficult(e.target.checked)} />
