@@ -1,16 +1,24 @@
 import { useState } from 'react';
 
+import type { Direction } from '../types/dictionary';
+
 interface ScratchRevealProps {
   kz: string;
   ru: string;
   exampleKz?: string;
   exampleRu?: string;
+  direction: Direction;
   onRate: (rating: 'dont-know' | 'almost' | 'remembered') => void;
 }
 
-export default function ScratchReveal({ kz, ru, exampleKz, exampleRu, onRate }: ScratchRevealProps) {
+export default function ScratchReveal({ kz, ru, exampleKz, exampleRu, direction, onRate }: ScratchRevealProps) {
   const [revealed, setRevealed] = useState(false);
   const [rated, setRated] = useState(false);
+
+  const question = direction === 'ru-kz' ? ru : kz;
+  const answer = direction === 'ru-kz' ? kz : ru;
+  const exampleQuestion = direction === 'ru-kz' ? exampleRu : exampleKz;
+  const exampleAnswer = direction === 'ru-kz' ? exampleKz : exampleRu;
 
   const handleReveal = () => {
     if (!revealed) setRevealed(true);
@@ -23,7 +31,7 @@ export default function ScratchReveal({ kz, ru, exampleKz, exampleRu, onRate }: 
 
   return (
     <div className="card w-full max-w-lg mx-auto text-center">
-      <h2 className="text-2xl font-bold mb-6">{kz}</h2>
+      <h2 className="text-2xl font-bold mb-6">{question}</h2>
 
       <div
         onClick={handleReveal}
@@ -35,18 +43,18 @@ export default function ScratchReveal({ kz, ru, exampleKz, exampleRu, onRate }: 
           </div>
         ) : (
           <div className="scratch-reveal w-full">
-            <p className="text-xl font-semibold">{ru}</p>
+            <p className="text-xl font-semibold">{answer}</p>
           </div>
         )}
       </div>
 
       {revealed && !rated && (
         <div className="mt-6 animate-fade-in">
-          {exampleKz && (
-            <p className="text-sm text-[var(--color-text-secondary)] italic mb-1">{exampleKz}</p>
+          {exampleQuestion && (
+            <p className="text-sm text-[var(--color-text-secondary)] italic mb-1">{exampleQuestion}</p>
           )}
-          {exampleRu && (
-            <p className="text-sm text-[var(--color-text-secondary)] mb-4">{exampleRu}</p>
+          {exampleAnswer && (
+            <p className="text-sm text-[var(--color-text-secondary)] mb-4">{exampleAnswer}</p>
           )}
 
           <div className="flex gap-2 flex-wrap justify-center">

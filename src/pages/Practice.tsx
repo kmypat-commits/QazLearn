@@ -334,6 +334,7 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
           ru={currentEntry.ru}
           exampleKz={currentEntry.example_kz}
           exampleRu={currentEntry.example_ru}
+          direction={direction}
           onRate={handleScratchRating}
         />
       )}

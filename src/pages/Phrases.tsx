@@ -71,7 +71,14 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
       );
     }
     if (category) result = result.filter(e => e.category === category);
-    if (status) result = result.filter(e => e.status === status || progress[e.id]?.reviewStatus === status);
+    if (status === 'learning') {
+      result = result.filter(e => {
+        const rs = progress[e.id]?.reviewStatus;
+        return rs === 'learning' || rs === 'review';
+      });
+    } else if (status) {
+      result = result.filter(e => e.status === status || progress[e.id]?.reviewStatus === status);
+    }
     if (difficulty) result = result.filter(e => e.difficulty === difficulty);
 
     switch (sort) {
@@ -235,25 +242,25 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
           </div>
 
           <div className="space-y-3">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+            <button className="w-full p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('learning'); }}>
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{learningCount}</div>
               <div className="text-sm text-blue-700 dark:text-blue-300">В процессе</div>
-            </div>
+            </button>
 
-            <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+            <button className="w-full p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setStatus(''); setDifficulty(3); setSearch(''); }}>
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{hardCount}</div>
               <div className="text-sm text-orange-700 dark:text-orange-300">Вызывают сложности (3+)</div>
-            </div>
+            </button>
 
-            <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+            <button className="w-full p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('mastered'); }}>
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">{masteredCount}</div>
               <div className="text-sm text-green-700 dark:text-green-300">Точно знаю</div>
-            </div>
+            </button>
 
-            <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+            <button className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('new'); }}>
               <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{newCount}</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Новые</div>
-            </div>
+            </button>
           </div>
 
           <div className="text-xs text-[var(--color-text-secondary)] text-center pt-2 border-t border-[var(--color-border)]">
