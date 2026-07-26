@@ -43,21 +43,26 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
       pool = pool.filter(e => filterIds.includes(e.id));
     }
 
+    if (onlyErrors) {
+      pool = pool.filter(e => errorEntries.includes(e.id));
+    }
+
+    let difficult: DictionaryEntry[] = [];
+    let rest: DictionaryEntry[] = [];
     if (onlyDifficult) {
-      pool = pool.filter(e => {
+      difficult = pool.filter(e => {
         const p = progress[e.id];
         if (!p || p.attempts === 0) return false;
         const accuracy = p.correctAnswers / p.attempts;
         return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
       });
+      rest = pool.filter(e => !difficult.includes(e));
     }
 
-    if (onlyErrors) {
-      pool = pool.filter(e => errorEntries.includes(e.id));
-    }
+    const mainPool = onlyDifficult ? difficult : pool;
 
     if (smartSelect) {
-      pool = [...pool].sort((a, b) => {
+      mainPool.sort((a, b) => {
         const pa = progress[a.id];
         const pb = progress[b.id];
         const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
@@ -65,10 +70,13 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
         return (weightB + Math.random() * 2) - (weightA + Math.random() * 2);
       });
     }
-    pool = [...pool].sort(() => Math.random() - 0.5);
+    mainPool.sort(() => Math.random() - 0.5);
+    rest.sort(() => Math.random() - 0.5);
 
-    const size = sessionSize === 0 ? pool.length : Math.min(sessionSize, pool.length);
-    const selected = pool.slice(0, size);
+    const targetSize = sessionSize === 0 ? pool.length : Math.min(sessionSize, pool.length);
+    const selected = mainPool.length >= targetSize
+      ? mainPool.slice(0, targetSize)
+      : [...mainPool, ...rest.slice(0, targetSize - mainPool.length)];
 
     setSessionEntries(selected);
     setCurrentIndex(0);
