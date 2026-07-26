@@ -61,40 +61,37 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
 
     const mainPool = onlyDifficult ? difficult : pool;
 
-    function weightedDraw(arr: DictionaryEntry[], count: number): DictionaryEntry[] {
-      const pool = [...arr];
-      const result: DictionaryEntry[] = [];
-      for (let n = 0; n < count && pool.length > 0; n++) {
-        const weights = pool.map(e => {
-          const p = progress[e.id];
-          return p ? (1 / (p.knowledgeLevel + 1)) + (p.wrongAnswers / Math.max(p.attempts, 1)) : 1;
-        });
-        const total = weights.reduce((s, w) => s + w, 0);
-        let r = Math.random() * total;
-        for (let i = 0; i < pool.length; i++) {
-          r -= weights[i];
-          if (r <= 0) {
-            result.push(pool[i]);
-            pool.splice(i, 1);
-            break;
-          }
-        }
+    const targetSize = sessionSize === 0 ? mainPool.length : Math.min(sessionSize, mainPool.length);
+
+    function shuffle(arr: DictionaryEntry[]) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
       }
-      return result;
     }
 
-    const targetSize = sessionSize === 0 ? mainPool.length : Math.min(sessionSize, mainPool.length);
     let selected: DictionaryEntry[];
 
-    if (smartSelect) {
-      selected = weightedDraw(mainPool, targetSize);
+    if (smartSelect && !onlyDifficult) {
+      mainPool.sort((a, b) => {
+        const pa = progress[a.id];
+        const pb = progress[b.id];
+        const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
+        const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
+        return weightB - weightA;
+      });
+      const weighted = mainPool.slice(0, Math.ceil(mainPool.length * 0.6));
+      const restPool = mainPool.slice(Math.ceil(mainPool.length * 0.6));
+      shuffle(weighted);
+      shuffle(restPool);
+      selected = [...weighted, ...restPool].slice(0, targetSize);
     } else {
-      mainPool.sort(() => Math.random() - 0.5);
+      shuffle(mainPool);
       selected = mainPool.slice(0, targetSize);
     }
 
     if (selected.length < targetSize) {
-      rest.sort(() => Math.random() - 0.5);
+      shuffle(rest);
       selected = [...selected, ...rest.slice(0, targetSize - selected.length)];
     }
 
