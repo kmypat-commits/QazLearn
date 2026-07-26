@@ -17,17 +17,16 @@ export default function Flashcard({ entry, direction, onAnswer, total, current }
   const backExample = direction === 'kz-ru' ? entry.example_ru : entry.example_kz;
   const backExampleText = direction === 'kz-ru' ? entry.example_kz : entry.example_ru;
 
-  const handleFlip = () => setFlipped(true);
+  const handleFlip = () => setFlipped(prev => !prev);
 
   const handleRate = (rating: AnswerRating) => {
-    setFlipped(false);
     onAnswer(rating);
   };
 
   return (
     <div className="perspective w-full max-w-lg mx-auto">
       <div
-        onClick={!flipped ? handleFlip : undefined}
+        onClick={handleFlip}
         className="relative w-full min-h-[280px]"
         style={{
           transformStyle: 'preserve-3d',
@@ -75,17 +74,24 @@ export default function Flashcard({ entry, direction, onAnswer, total, current }
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap justify-center mt-3">
-        <button className="btn btn-danger py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('dont-know')}>
-          Не знаю
-        </button>
-        <button className="btn btn-warning py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('hard')}>
-          Сложно
-        </button>
-        <button className="btn btn-success py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('good')}>
-          Знаю
-        </button>
-      </div>
+      {flipped && (
+        <div className="flex flex-col items-center gap-2 mt-3 animate-fade-in">
+          <div className="flex gap-2 flex-wrap justify-center">
+            <button className="btn btn-danger py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('dont-know')}>
+              Не знаю
+            </button>
+            <button className="btn btn-warning py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('hard')}>
+              Сложно
+            </button>
+            <button className="btn btn-success py-3 px-5 text-base flex-1 sm:flex-none" onClick={() => handleRate('good')}>
+              Знаю
+            </button>
+          </div>
+          <button className="btn btn-ghost text-xs py-1 px-3" onClick={() => setFlipped(false)}>
+            Скрыть ответ
+          </button>
+        </div>
+      )}
     </div>
   );
 }
