@@ -23,9 +23,12 @@ React 19, TypeScript 6, Vite 8, Tailwind CSS 4, oxlint, Vercel.
 - `src/lib/spacedRepetition.ts` — SRS (4 оценки, 6 уровней)
 - `src/lib/csv.ts` — парсинг/валидация/экспорт CSV
 - `src/lib/answerComparison.ts` — проверка ввода с учётом окончаний казахского
+- `src/lib/grammarRules.ts` — парсинг/валидация/поиск правил грамматики
+- `src/lib/ruleStorage.ts` — localStorage для статусов правил (ключ `qazlearn_rule_progress`)
 
-6 страниц: Dashboard, Words, Phrases, Practice, Progress, ImportCsv.
-6 режимов практики: flashcard, scratch, input-kz, input-ru, choice, phrase-build.
+7 страниц: Dashboard, Words, Phrases, Rules, Practice, Progress, ImportCsv.
+6 режимов практики слов: flashcard, scratch, input-kz, input-ru, choice, phrase-build.
+1 режим практики правил: RulePractice (через `ruleIds` проп).
 
 ## Соглашения
 
@@ -34,6 +37,7 @@ React 19, TypeScript 6, Vite 8, Tailwind CSS 4, oxlint, Vercel.
 - **Компоненты**: `export default function Name()`. Страницы в `src/pages/`, переиспользуемые — в `src/components/`.
 - **Типы**: строгие, без `any`. Интерфейсы в `dictionary.ts`.
 - **Словарь**: CSV в `src/assets/`, импортируется через `?raw`, парсится в рантайме.
+- **Правила**: CSV в `public/data/kazakh_grammar_rules.csv`, загружается через `fetch` в рантайме.
 - **Ответы**: 4 рейтинга `dont-know | hard | good | easy`, через `handleProgressUpdate`.
 - **localStorage**: пишется сразу при каждом изменении, без debounce.
 - **Форматирование**: JSX внутри `return (...)`, стрелочные функции для колбэков, `useCallback` для передаваемых вниз функций.
