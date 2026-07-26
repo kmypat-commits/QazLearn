@@ -61,17 +61,32 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
 
     const mainPool = onlyDifficult ? difficult : pool;
 
+    function shuffle(arr: DictionaryEntry[]) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
     if (smartSelect) {
       mainPool.sort((a, b) => {
         const pa = progress[a.id];
         const pb = progress[b.id];
         const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
         const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
-        return (weightB + Math.random() * 2) - (weightA + Math.random() * 2);
+        return weightB - weightA;
       });
+      const keep = Math.min(mainPool.length, Math.max(sessionSize, Math.ceil(mainPool.length / 2)));
+      const top = mainPool.slice(0, keep);
+      const bottom = mainPool.slice(keep);
+      shuffle(top);
+      shuffle(bottom);
+      mainPool.length = 0;
+      mainPool.push(...top, ...bottom);
+    } else {
+      shuffle(mainPool);
     }
-    mainPool.sort(() => Math.random() - 0.5);
-    rest.sort(() => Math.random() - 0.5);
+    shuffle(rest);
 
     const targetSize = sessionSize === 0 ? pool.length : Math.min(sessionSize, pool.length);
     const selected = mainPool.length >= targetSize
