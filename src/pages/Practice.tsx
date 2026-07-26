@@ -61,37 +61,42 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
 
     const mainPool = onlyDifficult ? difficult : pool;
 
-    function shuffle(arr: DictionaryEntry[]) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+    function weightedDraw(arr: DictionaryEntry[], count: number): DictionaryEntry[] {
+      const pool = [...arr];
+      const result: DictionaryEntry[] = [];
+      for (let n = 0; n < count && pool.length > 0; n++) {
+        const weights = pool.map(e => {
+          const p = progress[e.id];
+          return p ? (1 / (p.knowledgeLevel + 1)) + (p.wrongAnswers / Math.max(p.attempts, 1)) : 1;
+        });
+        const total = weights.reduce((s, w) => s + w, 0);
+        let r = Math.random() * total;
+        for (let i = 0; i < pool.length; i++) {
+          r -= weights[i];
+          if (r <= 0) {
+            result.push(pool[i]);
+            pool.splice(i, 1);
+            break;
+          }
+        }
       }
+      return result;
     }
+
+    const targetSize = sessionSize === 0 ? mainPool.length : Math.min(sessionSize, mainPool.length);
+    let selected: DictionaryEntry[];
 
     if (smartSelect) {
-      mainPool.sort((a, b) => {
-        const pa = progress[a.id];
-        const pb = progress[b.id];
-        const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
-        const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
-        return weightB - weightA;
-      });
-      const keep = Math.min(mainPool.length, Math.max(sessionSize, Math.ceil(mainPool.length / 2)));
-      const top = mainPool.slice(0, keep);
-      const bottom = mainPool.slice(keep);
-      shuffle(top);
-      shuffle(bottom);
-      mainPool.length = 0;
-      mainPool.push(...top, ...bottom);
+      selected = weightedDraw(mainPool, targetSize);
     } else {
-      shuffle(mainPool);
+      mainPool.sort(() => Math.random() - 0.5);
+      selected = mainPool.slice(0, targetSize);
     }
-    shuffle(rest);
 
-    const targetSize = sessionSize === 0 ? pool.length : Math.min(sessionSize, pool.length);
-    const selected = mainPool.length >= targetSize
-      ? mainPool.slice(0, targetSize)
-      : [...mainPool, ...rest.slice(0, targetSize - mainPool.length)];
+    if (selected.length < targetSize) {
+      rest.sort(() => Math.random() - 0.5);
+      selected = [...selected, ...rest.slice(0, targetSize - selected.length)];
+    }
 
     setSessionEntries(selected);
     setCurrentIndex(0);
