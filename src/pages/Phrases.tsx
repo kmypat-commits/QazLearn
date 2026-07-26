@@ -55,8 +55,13 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
   );
 
   const hardCount = useMemo(
-    () => phrases.filter(e => e.difficulty >= 3).length,
-    [phrases]
+    () => phrases.filter(e => {
+      const p = progress[e.id];
+      if (!p || p.attempts === 0) return false;
+      const accuracy = p.correctAnswers / p.attempts;
+      return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
+    }).length,
+    [phrases, progress]
   );
 
   const newCount = phrases.length - masteredCount - learningCount;
@@ -64,7 +69,14 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
   const filtered = useMemo(() => {
     let result = [...phrases];
 
-    if (search) {
+    if (search === '__hard__') {
+      result = result.filter(e => {
+        const p = progress[e.id];
+        if (!p || p.attempts === 0) return false;
+        const accuracy = p.correctAnswers / p.attempts;
+        return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
+      });
+    } else if (search) {
       const q = search.toLowerCase();
       result = result.filter(e =>
         e.kz.toLowerCase().includes(q) || e.ru.toLowerCase().includes(q)
@@ -247,9 +259,9 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
               <div className="text-sm text-blue-700 dark:text-blue-300">В процессе</div>
             </button>
 
-            <button className="w-full p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setStatus(''); setDifficulty(3); setSearch(''); }}>
+            <button className="w-full p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setStatus(''); setDifficulty(''); setSearch('__hard__'); }}>
               <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{hardCount}</div>
-              <div className="text-sm text-orange-700 dark:text-orange-300">Вызывают сложности (3+)</div>
+              <div className="text-sm text-orange-700 dark:text-orange-300">Вызывают сложности</div>
             </button>
 
             <button className="w-full p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('mastered'); }}>
