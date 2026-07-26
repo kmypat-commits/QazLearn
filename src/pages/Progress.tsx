@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 interface ProgressViewProps {
   entries: DictionaryEntry[];
   progress: Record<number, ProgressEntry>;
+  onNavigate: (page: 'words' | 'phrases' | 'practice', filter?: { status?: string; ids?: number[] }) => void;
 }
 
 const GOALS = [
@@ -29,7 +30,7 @@ const GOALS = [
   },
 ];
 
-export default function ProgressView({ entries, progress }: ProgressViewProps) {
+export default function ProgressView({ entries, progress, onNavigate }: ProgressViewProps) {
   const words = entries.filter(e => e.type === 'word');
   const phrases = entries.filter(e => e.type === 'phrase');
 
@@ -68,31 +69,31 @@ export default function ProgressView({ entries, progress }: ProgressViewProps) {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="card text-center">
+        <button className="card card-hover text-center" onClick={() => onNavigate('words')}>
           <div className="text-2xl font-bold text-[var(--color-primary)]">{words.length}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">Всего слов</div>
-        </div>
-        <div className="card text-center">
+        </button>
+        <button className="card card-hover text-center" onClick={() => onNavigate('words', { status: 'mastered' })}>
           <div className="text-2xl font-bold text-[var(--color-success)]">{masteredWords}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">Освоено слов</div>
-        </div>
-        <div className="card text-center">
+        </button>
+        <button className="card card-hover text-center" onClick={() => onNavigate('phrases')}>
           <div className="text-2xl font-bold text-[var(--color-primary)]">{phrases.length}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">Всего фраз</div>
-        </div>
-        <div className="card text-center">
+        </button>
+        <button className="card card-hover text-center" onClick={() => onNavigate('phrases', { status: 'mastered' })}>
           <div className="text-2xl font-bold text-[var(--color-success)]">{masteredPhrases}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">Освоено фраз</div>
-        </div>
+        </button>
       </div>
 
       <div className="card">
         <h2 className="text-lg font-semibold mb-3">Ежедневная статистика</h2>
         <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
+          <button onClick={() => onNavigate('practice', { ids: entries.filter(e => { const p = progress[e.id]; return p && needsReview(p) && p.reviewStatus !== 'mastered'; }).map(e => e.id) })}>
             <div className="text-xl font-bold text-[var(--color-primary)]">{dueForReview}</div>
             <div className="text-xs text-[var(--color-text-secondary)]">На сегодня</div>
-          </div>
+          </button>
           <div>
             <div className="text-xl font-bold">{todayCorrect}</div>
             <div className="text-xs text-[var(--color-text-secondary)]">Правильно</div>
@@ -115,9 +116,15 @@ export default function ProgressView({ entries, progress }: ProgressViewProps) {
       <div className="card">
         <h2 className="text-lg font-semibold mb-3">Распределение слов по статусам</h2>
         <div className="space-y-2">
-          <ProgressBar value={masteredWords} max={Math.max(words.length, 1)} label={`Освоено: ${masteredWords}`} color="var(--color-success)" />
-          <ProgressBar value={totalLearning} max={Math.max(words.length, 1)} label={`В процессе: ${totalLearning}`} color="var(--color-warning)" />
-          <ProgressBar value={totalNew} max={Math.max(words.length, 1)} label={`Новых: ${totalNew}`} color="var(--color-primary)" />
+          <button className="w-full text-left" onClick={() => onNavigate('words', { status: 'mastered' })}>
+            <ProgressBar value={masteredWords} max={Math.max(words.length, 1)} label={`Освоено: ${masteredWords}`} color="var(--color-success)" />
+          </button>
+          <button className="w-full text-left" onClick={() => onNavigate('words', { status: 'learning' })}>
+            <ProgressBar value={totalLearning} max={Math.max(words.length, 1)} label={`В процессе: ${totalLearning}`} color="var(--color-warning)" />
+          </button>
+          <button className="w-full text-left" onClick={() => onNavigate('words', { status: 'new' })}>
+            <ProgressBar value={totalNew} max={Math.max(words.length, 1)} label={`Новых: ${totalNew}`} color="var(--color-primary)" />
+          </button>
         </div>
       </div>
 

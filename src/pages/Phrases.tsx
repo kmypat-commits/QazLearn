@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { DictionaryEntry, Category, Status, ProgressEntry } from '../types/dictionary';
+import { isMastered } from '../lib/spacedRepetition';
 import Filters from '../components/Filters';
 import ProgressBar from '../components/ProgressBar';
 import type { SortOption } from '../components/Filters';
@@ -9,6 +10,7 @@ interface PhrasesProps {
   progress: Record<number, ProgressEntry>;
   onProgressUpdate: (entryId: number, rating: 'dont-know' | 'hard' | 'good' | 'easy') => void;
   onGoToPractice?: (options?: { ids?: number[]; mode?: 'flashcard' }) => void;
+  initialStatus?: string;
 }
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {
@@ -25,10 +27,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: 'Общее',
 };
 
-export default function Phrases({ entries, progress, onProgressUpdate, onGoToPractice }: PhrasesProps) {
+export default function Phrases({ entries, progress, onProgressUpdate, onGoToPractice, initialStatus }: PhrasesProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category | ''>('');
-  const [status, setStatus] = useState<Status | ''>('');
+  const [status, setStatus] = useState<Status | ''>((initialStatus as Status) || '');
   const [difficulty, setDifficulty] = useState<number | ''>('');
   const [sort, setSort] = useState<SortOption>('alpha');
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,7 +41,7 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
   const masteredCount = useMemo(
     () => phrases.filter(e => {
       const p = progress[e.id];
-      return p && (p.reviewStatus === 'mastered' || e.status === 'mastered');
+      return p && isMastered(p);
     }).length,
     [phrases, progress]
   );

@@ -1,23 +1,25 @@
 import { useState, useCallback, useEffect } from 'react';
-import type { DictionaryEntry, Direction, AnswerRating, PracticeMode } from '../types/dictionary';
+import type { DictionaryEntry, Direction, AnswerRating, PracticeMode, ProgressEntry } from '../types/dictionary';
 import Flashcard from '../components/Flashcard';
 import ScratchReveal from '../components/ScratchReveal';
 import PracticeInput from '../components/PracticeInput';
 
 interface PracticeProps {
   entries: DictionaryEntry[];
+  progress: Record<number, ProgressEntry>;
   onProgressUpdate: (entryId: number, rating: 'dont-know' | 'hard' | 'good' | 'easy') => void;
   filterIds?: number[];
   initialMode?: PracticeMode;
 }
 
-export default function Practice({ entries, onProgressUpdate, filterIds, initialMode }: PracticeProps) {
+export default function Practice({ entries, progress, onProgressUpdate, filterIds, initialMode }: PracticeProps) {
   const [mode, setMode] = useState<PracticeMode>(initialMode || 'flashcard');
   const [direction, setDirection] = useState<Direction>('kz-ru');
   const [sessionSize, setSessionSize] = useState<number>(10);
   const [onlyDifficult, setOnlyDifficult] = useState(false);
   const [onlyErrors, setOnlyErrors] = useState(false);
   const [shuffled, setShuffled] = useState(true);
+  const [smartSelect, setSmartSelect] = useState(true);
 
   const [sessionEntries, setSessionEntries] = useState<DictionaryEntry[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -32,6 +34,8 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
 
   const [scrambledWords, setScrambledWords] = useState<string[]>([]);
   const [arrangedWords, setArrangedWords] = useState<string[]>([]);
+  const [phraseChecked, setPhraseChecked] = useState(false);
+  const [phraseCorrect, setPhraseCorrect] = useState(false);
 
   const startSession = useCallback(() => {
     let pool = entries;
@@ -48,7 +52,15 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
       pool = pool.filter(e => errorEntries.includes(e.id));
     }
 
-    if (shuffled) {
+    if (smartSelect) {
+      pool = [...pool].sort((a, b) => {
+        const pa = progress[a.id];
+        const pb = progress[b.id];
+        const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
+        const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
+        return (weightB + Math.random() * 0.5) - (weightA + Math.random() * 0.5);
+      });
+    } else if (shuffled) {
       pool = [...pool].sort(() => Math.random() - 0.5);
     }
 
@@ -63,7 +75,9 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
     setChoiceAnswered(false);
     setSelectedChoice(null);
     setArrangedWords([]);
-  }, [entries, onlyDifficult, onlyErrors, shuffled, sessionSize, errorEntries]);
+    setPhraseChecked(false);
+    setPhraseCorrect(false);
+  }, [entries, onlyDifficult, onlyErrors, shuffled, smartSelect, sessionSize, errorEntries, progress]);
 
   useEffect(() => {
     startSession();
@@ -102,6 +116,8 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
     const words = entry.kz.split(/\s+/).filter(Boolean);
     setScrambledWords([...words].sort(() => Math.random() - 0.5));
     setArrangedWords([]);
+    setPhraseChecked(false);
+    setPhraseCorrect(false);
   };
 
   const handleAnswer = (rating: AnswerRating) => {
@@ -164,10 +180,18 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
 
   const handlePhraseCheck = () => {
     const entry = sessionEntries[currentIndex];
-    if (!entry) return;
+    if (!entry || phraseChecked) return;
     const userPhrase = arrangedWords.join(' ');
     const correct = userPhrase.toLowerCase() === entry.kz.toLowerCase();
+    setPhraseChecked(true);
+    setPhraseCorrect(correct);
     handleInputAnswer(correct);
+    setTimeout(() => goNext(), 1500);
+  };
+
+  const finishSession = () => {
+    setSessionEntries([]);
+    setSessionDone(false);
   };
 
   const handleScratchRating = (rating: 'dont-know' | 'almost' | 'remembered') => {
@@ -197,6 +221,9 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
             </button>
             <button className="btn btn-ghost" onClick={() => { setOnlyErrors(true); startSession(); }}>
               Ошибочные ({errorEntries.length})
+            </button>
+            <button className="btn btn-danger" onClick={finishSession}>
+              Завершить
             </button>
           </div>
         </div>
@@ -256,7 +283,11 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
           </select>
 
           <label className="flex items-center gap-1 text-sm cursor-pointer">
-            <input type="checkbox" checked={shuffled} onChange={e => setShuffled(e.target.checked)} />
+            <input type="checkbox" checked={smartSelect} onChange={e => setSmartSelect(e.target.checked)} />
+            Умный подбор
+          </label>
+          <label className="flex items-center gap-1 text-sm cursor-pointer">
+            <input type="checkbox" checked={shuffled} onChange={e => setShuffled(e.target.checked)} disabled={smartSelect} />
             Перемешать
           </label>
           <label className="flex items-center gap-1 text-sm cursor-pointer">
@@ -360,8 +391,16 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
               arrangedWords.map((word, i) => (
                 <button
                   key={i}
-                  className="px-3 py-1.5 rounded-lg bg-[var(--color-primary)] text-white text-sm"
-                  onClick={() => handlePhraseWordClick(word, false)}
+                  className={`px-3 py-1.5 rounded-lg text-white text-sm ${
+                    phraseChecked
+                      ? phraseCorrect
+                        ? 'bg-[var(--color-success)]'
+                        : word !== currentEntry.kz.split(/\s+/)[i]
+                          ? 'bg-[var(--color-danger)]'
+                          : 'bg-[var(--color-primary)]'
+                      : 'bg-[var(--color-primary)]'
+                  }`}
+                  onClick={() => !phraseChecked && handlePhraseWordClick(word, false)}
                 >
                   {word}
                 </button>
@@ -373,21 +412,28 @@ export default function Practice({ entries, onProgressUpdate, filterIds, initial
             {scrambledWords.map((word, i) => (
               <button
                 key={i}
-                className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-sm hover:bg-[var(--color-border)]"
+                className="px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-sm hover:bg-[var(--color-border)] disabled:opacity-30 disabled:cursor-not-allowed"
                 onClick={() => handlePhraseWordClick(word, true)}
+                disabled={phraseChecked}
               >
                 {word}
               </button>
             ))}
           </div>
 
-          <button
-            className="btn btn-primary w-full"
-            onClick={handlePhraseCheck}
-            disabled={arrangedWords.length === 0}
-          >
-            Проверить
-          </button>
+          {phraseChecked ? (
+            <div className={`text-center font-semibold ${phraseCorrect ? 'text-[var(--color-success)]' : 'text-[var(--color-danger)]'}`}>
+              {phraseCorrect ? '✓ Правильно!' : `✗ ${currentEntry.kz}`}
+            </div>
+          ) : (
+            <button
+              className="btn btn-primary w-full"
+              onClick={handlePhraseCheck}
+              disabled={arrangedWords.length === 0}
+            >
+              Проверить
+            </button>
+          )}
         </div>
       )}
     </div>

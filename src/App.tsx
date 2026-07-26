@@ -36,6 +36,7 @@ export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [practiceFilter, setPracticeFilter] = useState<{ ids?: number[]; mode?: PracticeMode }>({});
+  const [pageFilter, setPageFilter] = useState<{ status?: string }>({});
 
   useEffect(() => {
     const savedTheme = loadTheme();
@@ -96,6 +97,15 @@ export default function App() {
   const goToPractice = useCallback((options?: { ids?: number[]; mode?: PracticeMode }) => {
     setPracticeFilter(options || {});
     setCurrentPage('practice');
+  }, []);
+
+  const goToPage = useCallback((page: Page, filter?: { status?: string; ids?: number[] }) => {
+    if (page === 'practice') {
+      setPracticeFilter({ ids: filter?.ids });
+    } else {
+      setPageFilter(filter || {});
+    }
+    setCurrentPage(page);
   }, []);
 
   const dueForReview = entries.filter(e => {
@@ -208,11 +218,11 @@ export default function App() {
 
       <main className="max-w-4xl mx-auto px-4 py-6">
         {currentPage === 'dashboard' && <Dashboard entries={entries} progress={progress} onGoToPractice={goToPractice} onNavigate={(p) => setCurrentPage(p as Page)} />}
-        {currentPage === 'words' && <Words entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} />}
-        {currentPage === 'phrases' && <Phrases entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} />}
+        {currentPage === 'words' && <Words key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
+        {currentPage === 'phrases' && <Phrases key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
 
-        {currentPage === 'practice' && <Practice key={JSON.stringify(practiceFilter)} entries={entries} onProgressUpdate={handleProgressUpdate} filterIds={practiceFilter.ids} initialMode={practiceFilter.mode} />}
-        {currentPage === 'progress' && <ProgressView entries={entries} progress={progress} />}
+        {currentPage === 'practice' && <Practice key={JSON.stringify(practiceFilter)} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} filterIds={practiceFilter.ids} initialMode={practiceFilter.mode} />}
+        {currentPage === 'progress' && <ProgressView entries={entries} progress={progress} onNavigate={goToPage} />}
         {currentPage === 'import' && <ImportCsv entries={entries} onImport={handleImport} />}
       </main>
     </div>
