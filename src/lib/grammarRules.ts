@@ -20,10 +20,15 @@ export function parseGrammarRulesCsv(csvText: string): GrammarRule[] {
   const exampleIdxs = exampleFields.map(f => headers.indexOf(f));
 
   const rules: GrammarRule[] = [];
+  const seenIds = new Set<string>();
 
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCsvLine(lines[i]);
     if (cols.length <= idIdx) continue;
+
+    const id = cols[idIdx]?.trim() || '';
+    if (!id || seenIds.has(id)) continue;
+    seenIds.add(id);
 
     const examples: { kz: string; ru: string }[] = [];
     for (let j = 0; j < 5; j++) {
@@ -35,7 +40,7 @@ export function parseGrammarRulesCsv(csvText: string): GrammarRule[] {
     }
 
     rules.push({
-      id: cols[idIdx]?.trim() || '',
+      id,
       titleRu: cols[titleRuIdx]?.trim() || '',
       titleKz: cols[titleKzIdx]?.trim() || '',
       category: cols[categoryIdx]?.trim() || '',
@@ -68,6 +73,7 @@ export function validateGrammarRulesCsv(csvText: string): { valid: boolean; erro
   }
 
   const ids = new Set<string>();
+  const duplicates = new Set<string>();
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCsvLine(lines[i]);
     const id = cols[headers.indexOf('id')]?.trim();
@@ -75,8 +81,9 @@ export function validateGrammarRulesCsv(csvText: string): { valid: boolean; erro
       errors.push(`Строка ${i + 1}: отсутствует id`);
       continue;
     }
-    if (ids.has(id)) {
-      errors.push(`Строка ${i + 1}: дубликат id "${id}"`);
+    if (ids.has(id) && !duplicates.has(id)) {
+      duplicates.add(id);
+      errors.push(`Обнаружен дубликат id "${id}" — строка ${i + 1}`);
     }
     ids.add(id);
   }

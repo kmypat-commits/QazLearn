@@ -24,6 +24,7 @@ export function parseCsv(text: string): DictionaryEntry[] {
   const tagsIdx = header.indexOf('tags');
 
   const entries: DictionaryEntry[] = [];
+  const seenIds = new Set<number>();
 
   for (let i = 1; i < lines.length; i++) {
     const cols = parseCsvLine(lines[i]);
@@ -32,8 +33,12 @@ export function parseCsv(text: string): DictionaryEntry[] {
     const type = cols[typeIdx]?.trim().toLowerCase();
     if (type !== 'word' && type !== 'phrase') continue;
 
+    const id = parseInt(cols[idIdx]?.trim()) || i;
+    if (seenIds.has(id)) continue;
+    seenIds.add(id);
+
     const entry: DictionaryEntry = {
-      id: parseInt(cols[idIdx]?.trim()) || i,
+      id,
       type: type as 'word' | 'phrase',
       kz: cols[kzIdx]?.trim() || '',
       ru: cols[ruIdx]?.trim() || '',
@@ -93,6 +98,25 @@ export function validateCsv(text: string): string[] {
     if (!header.includes(col)) {
       errors.push(`Отсутствует обязательная колонка: "${col}"`);
     }
+  }
+
+  if (errors.length > 0) return errors;
+
+  const idIdx = header.indexOf('id');
+  const ids = new Set<number>();
+  const duplicates = new Set<string>();
+  for (let i = 1; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    if (cols.length <= idIdx) continue;
+    const idStr = cols[idIdx]?.trim();
+    if (!idStr) continue;
+    const id = parseInt(idStr);
+    if (isNaN(id)) continue;
+    if (ids.has(id) && !duplicates.has(idStr)) {
+      duplicates.add(idStr);
+      errors.push(`Обнаружен дубликат id "${idStr}" — строка ${i + 1}`);
+    }
+    ids.add(id);
   }
 
   return errors;
