@@ -3,6 +3,7 @@ import type { DictionaryEntry, Direction, AnswerRating, PracticeMode, ProgressEn
 import Flashcard from '../components/Flashcard';
 import ScratchReveal from '../components/ScratchReveal';
 import PracticeInput from '../components/PracticeInput';
+import RulePractice from '../components/rules/RulePractice';
 
 interface PracticeProps {
   entries: DictionaryEntry[];
@@ -10,10 +11,12 @@ interface PracticeProps {
   onProgressUpdate: (entryId: number, rating: 'dont-know' | 'hard' | 'good' | 'easy') => void;
   filterIds?: number[];
   initialMode?: PracticeMode;
+  ruleIds?: string[];
 }
 
-export default function Practice({ entries, progress, onProgressUpdate, filterIds, initialMode }: PracticeProps) {
+export default function Practice({ entries, progress, onProgressUpdate, filterIds, initialMode, ruleIds }: PracticeProps) {
   const [mode, setMode] = useState<PracticeMode>(initialMode || 'flashcard');
+  const [showRulePractice, setShowRulePractice] = useState(!!ruleIds && ruleIds.length > 0);
   const [direction, setDirection] = useState<Direction>('kz-ru');
   const [sessionSize, setSessionSize] = useState<number>(10);
   const [onlyDifficult, setOnlyDifficult] = useState(false);
@@ -230,6 +233,20 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
     const mapped: AnswerRating = rating === 'dont-know' ? 'dont-know' : rating === 'almost' ? 'hard' : 'good';
     handleAnswer(mapped);
   };
+
+  const handleOpenRule = () => {};
+
+  if (showRulePractice) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <RulePractice
+          ruleIds={ruleIds || []}
+          onExit={() => setShowRulePractice(false)}
+          onOpenRule={handleOpenRule}
+        />
+      </div>
+    );
+  }
 
   const currentEntry = sessionEntries[currentIndex];
 

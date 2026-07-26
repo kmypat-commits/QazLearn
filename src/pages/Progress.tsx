@@ -1,12 +1,13 @@
 import type { DictionaryEntry, ProgressEntry } from '../types/dictionary';
 import { isMastered, needsReview } from '../lib/spacedRepetition';
 import { loadStreak, loadDailyStats } from '../lib/storage';
+import { loadRuleProgress } from '../lib/ruleStorage';
 import ProgressBar from '../components/ProgressBar';
 
 interface ProgressViewProps {
   entries: DictionaryEntry[];
   progress: Record<number, ProgressEntry>;
-  onNavigate: (page: 'words' | 'phrases' | 'practice', filter?: { status?: string; ids?: number[] }) => void;
+  onNavigate: (page: 'words' | 'phrases' | 'practice' | 'rules', filter?: { status?: string; ids?: number[] }) => void;
 }
 
 const GOALS = [
@@ -66,6 +67,12 @@ export default function ProgressView({ entries, progress, onNavigate }: Progress
     return !p || p.reviewStatus === 'new';
   }).length;
 
+  const ruleProgress = loadRuleProgress();
+  const ruleIds = Object.keys(ruleProgress);
+  const totalRules = ruleIds.length;
+  const learnedRules = ruleIds.filter(id => ruleProgress[id].status === 'learned').length;
+  const reviewRules = ruleIds.filter(id => ruleProgress[id].status === 'review').length;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -102,6 +109,24 @@ export default function ProgressView({ entries, progress, onNavigate }: Progress
             <div className="text-xl font-bold text-[var(--color-warning)]">{accuracy}%</div>
             <div className="text-xs text-[var(--color-text-secondary)]">Точность</div>
           </div>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2 className="text-lg font-semibold mb-3">Правила грамматики</h2>
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div className="text-xl font-bold text-[var(--color-primary)]">{totalRules}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">Всего правил</div>
+          </div>
+          <button className="hover:opacity-80 transition-opacity" onClick={() => onNavigate('rules')}>
+            <div className="text-xl font-bold text-[var(--color-success)]">{learnedRules}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">Изучено</div>
+          </button>
+          <button className="hover:opacity-80 transition-opacity" onClick={() => onNavigate('rules')}>
+            <div className="text-xl font-bold text-[var(--color-warning)]">{reviewRules}</div>
+            <div className="text-xs text-[var(--color-text-secondary)]">На повторение</div>
+          </button>
         </div>
       </div>
 

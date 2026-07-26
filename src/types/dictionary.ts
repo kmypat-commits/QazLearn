@@ -46,3 +46,34 @@ export interface SessionStats {
   correct: number;
   wrong: number;
 }
+
+export interface GrammarRule {
+  id: string;
+  titleRu: string;
+  titleKz: string;
+  category: string;
+  level: string;
+  shortRuleRu: string;
+  formation: string;
+  formula: string;
+  examples: { kz: string; ru: string }[];
+  noteRu: string;
+  tags: string[];
+}
+
+export type RuleStatus = 'new' | 'learned' | 'review';
+
+export interface RuleProgress {
+  id: string;
+  status: RuleStatus;
+  lastReviewedAt: string | null;
+}
+
+export type Page =
+  | 'dashboard'
+  | 'words'
+  | 'phrases'
+  | 'rules'
+  | 'practice'
+  | 'progress'
+  | 'import';
