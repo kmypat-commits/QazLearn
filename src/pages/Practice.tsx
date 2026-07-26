@@ -39,6 +39,10 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
   const startSession = useCallback(() => {
     let pool = entries;
 
+    if (mode === 'phrase-build') {
+      pool = pool.filter(e => e.kz.split(/\s+/).filter(Boolean).length >= 2);
+    }
+
     if (filterIds && filterIds.length > 0) {
       pool = pool.filter(e => filterIds.includes(e.id));
     }
@@ -105,7 +109,7 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
     setArrangedWords([]);
     setPhraseChecked(false);
     setPhraseCorrect(false);
-  }, [entries, onlyDifficult, onlyErrors, smartSelect, sessionSize, errorEntries, progress]);
+  }, [entries, onlyDifficult, onlyErrors, smartSelect, sessionSize, errorEntries, progress, mode]);
 
   useEffect(() => {
     startSession();
