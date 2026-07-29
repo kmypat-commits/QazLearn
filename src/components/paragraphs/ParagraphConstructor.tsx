@@ -2,6 +2,10 @@ import { useState, useCallback } from 'react';
 
 type ConstructorMode = 'sentence' | 'blocks';
 
+function splitSentences(text: string): string[] {
+  return text.split(/(?<=[.!?])\s+/).filter(Boolean);
+}
+
 function splitWords(text: string): string[] {
   return text.split(/\s+/).filter(Boolean);
 }
@@ -27,7 +31,9 @@ export default function ParagraphConstructor({
 }: ParagraphConstructorProps) {
   const [mode, setMode] = useState<ConstructorMode>('sentence');
 
-  const sentenceBlocks = blocksKz;
+  const sentenceBlocks = blocksKz.length > 0 && blocksKz[0].length < kzText.length * 0.8
+    ? blocksKz
+    : splitSentences(kzText);
   const wordBlocks = splitWords(kzText);
 
   const allBlocks = mode === 'sentence' ? sentenceBlocks : wordBlocks;
