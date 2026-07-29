@@ -93,7 +93,7 @@ export default function ParagraphTask({
   } | null>(null);
   const [activeHint, setActiveHint] = useState<string | null>(null);
   const [assessment, setAssessment] = useState<AssessmentRating | null>(null);
-  const [hintsUsed, setHintsUsed] = useState(0);
+  const [, setHintsUsed] = useState(0);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const actualDirection: ParagraphDirection = direction === 'mixed'
