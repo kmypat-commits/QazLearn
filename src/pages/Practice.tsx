@@ -60,6 +60,7 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
       difficult = pool.filter(e => {
         const p = progress[e.id];
         if (!p || p.attempts === 0) return false;
+        if (p.reviewStatus === 'mastered') return false;
         const accuracy = p.correctAnswers / p.attempts;
         return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
       });
@@ -80,18 +81,13 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
     let selected: DictionaryEntry[];
 
     if (smartSelect && !onlyDifficult) {
-      mainPool.sort((a, b) => {
-        const pa = progress[a.id];
-        const pb = progress[b.id];
-        const weightA = pa ? (1 / (pa.knowledgeLevel + 1)) + (pa.wrongAnswers / Math.max(pa.attempts, 1)) : 1;
-        const weightB = pb ? (1 / (pb.knowledgeLevel + 1)) + (pb.wrongAnswers / Math.max(pb.attempts, 1)) : 1;
-        return weightB - weightA;
+      const scored = mainPool.map(e => {
+        const p = progress[e.id];
+        const weight = p ? (1 / (p.knowledgeLevel + 1)) + (p.wrongAnswers / Math.max(p.attempts, 1)) : 1;
+        return { entry: e, score: weight * (0.75 + Math.random() * 0.5) };
       });
-      const weighted = mainPool.slice(0, Math.ceil(mainPool.length * 0.6));
-      const restPool = mainPool.slice(Math.ceil(mainPool.length * 0.6));
-      shuffle(weighted);
-      shuffle(restPool);
-      selected = [...weighted, ...restPool].slice(0, targetSize);
+      scored.sort((a, b) => b.score - a.score);
+      selected = scored.slice(0, targetSize).map(w => w.entry);
     } else {
       shuffle(mainPool);
       selected = mainPool.slice(0, targetSize);

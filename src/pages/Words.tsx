@@ -58,6 +58,7 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
     () => words.filter(e => {
       const p = progress[e.id];
       if (!p || p.attempts === 0) return false;
+      if (p.reviewStatus === 'mastered') return false;
       const accuracy = p.correctAnswers / p.attempts;
       return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
     }).length,
@@ -73,6 +74,7 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
       result = result.filter(e => {
         const p = progress[e.id];
         if (!p || p.attempts === 0) return false;
+        if (p.reviewStatus === 'mastered') return false;
         const accuracy = p.correctAnswers / p.attempts;
         return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
       });
@@ -146,7 +148,7 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
           sort={sort} onSortChange={setSort}
         />
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
             <button
               className="btn btn-primary text-sm"
               onClick={() => {
@@ -164,12 +166,26 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
             <button
               className="btn btn-warning text-sm"
               onClick={() => {
-                const hard = words.filter(e => e.difficulty >= 3);
+                const hard = words.filter(e => {
+                  const p = progress[e.id];
+                  if (!p || p.attempts === 0) return false;
+                  if (p.reviewStatus === 'mastered') return false;
+                  const accuracy = p.correctAnswers / p.attempts;
+                  return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
+                });
                 onGoToPractice?.({ ids: hard.map(e => e.id), mode: 'flashcard' });
               }}
             >
               Повторить сложные
             </button>
+            {filtered.length > 0 && (
+              <button
+                className="btn btn-ghost text-sm"
+                onClick={() => onGoToPractice?.({ ids: filtered.map(e => e.id), mode: 'flashcard' })}
+              >
+                Тренировать ({filtered.length})
+              </button>
+            )}
           </div>
 
         <div className="space-y-3">

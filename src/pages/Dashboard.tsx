@@ -40,6 +40,13 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
   const accuracy = totalAnswered > 0 ? Math.round((todayCorrect / totalAnswered) * 100) : 0;
 
   const hardWords = words.filter(e => e.difficulty >= 3).length;
+  const progressHard = words.filter(e => {
+    const p = progress[e.id];
+    if (!p || p.attempts === 0) return false;
+    if (p.reviewStatus === 'mastered') return false;
+    const accuracy = p.correctAnswers / p.attempts;
+    return accuracy < 0.5 || p.knowledgeLevel <= 1 || p.wrongAnswers >= 2;
+  }).map(e => e.id);
 
   const categoryLabels: Record<string, string> = {
     office: 'Офисная лексика',
@@ -78,7 +85,7 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
           <button className="btn btn-success" onClick={() => onNavigate?.('words')}>
             Новые слова
           </button>
-          <button className="btn btn-warning" onClick={() => onGoToPractice({ mode: 'flashcard' })}>
+          <button className="btn btn-warning" onClick={() => onGoToPractice({ ids: progressHard, mode: 'flashcard' })}>
             Повторить сложные
           </button>
           <button className="btn btn-ghost" onClick={() => onNavigate?.('phrases')}>

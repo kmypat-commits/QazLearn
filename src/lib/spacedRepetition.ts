@@ -34,7 +34,7 @@ export function updateProgress(
       if (progress.correctAnswers > progress.wrongAnswers) {
         const interval = INTERVALS[progress.knowledgeLevel] || 30;
         progress.nextReviewAt = new Date(Date.now() + interval * 86400000).toISOString();
-        progress.reviewStatus = progress.knowledgeLevel >= 3 ? 'mastered' : 'review';
+        progress.reviewStatus = (progress.knowledgeLevel >= 3 && progress.correctAnswers >= 10) ? 'mastered' : 'review';
       } else {
         progress.nextReviewAt = new Date(Date.now() + 3600000).toISOString();
         progress.reviewStatus = 'learning';
@@ -48,7 +48,7 @@ export function updateProgress(
       if (progress.correctAnswers > progress.wrongAnswers) {
         const interval = INTERVALS[progress.knowledgeLevel] || 30;
         progress.nextReviewAt = new Date(Date.now() + interval * 86400000).toISOString();
-        progress.reviewStatus = progress.knowledgeLevel >= 3 ? 'mastered' : 'review';
+        progress.reviewStatus = (progress.knowledgeLevel >= 3 && progress.correctAnswers >= 10) ? 'mastered' : 'review';
       } else {
         progress.nextReviewAt = new Date(Date.now() + 3600000).toISOString();
         progress.reviewStatus = 'learning';
@@ -68,6 +68,7 @@ export function isMastered(progress: ProgressEntry): boolean {
   return (
     progress.reviewStatus === 'mastered' &&
     progress.knowledgeLevel >= 3 &&
-    progress.correctAnswers > progress.wrongAnswers
+    progress.correctAnswers > progress.wrongAnswers &&
+    progress.correctAnswers >= 10
   );
 }
