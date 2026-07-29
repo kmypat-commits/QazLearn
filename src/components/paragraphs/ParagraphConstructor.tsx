@@ -2,26 +2,38 @@ import { useState, useCallback } from 'react';
 
 type ConstructorMode = 'sentence' | 'blocks';
 
+function splitWords(text: string): string[] {
+  return text.split(/\s+/).filter(Boolean);
+}
+
 interface ParagraphConstructorProps {
   blocksKz: string[];
-  blocksRu: string[];
   correctOrder: string[];
+  kzText: string;
   onCorrect: () => void;
   onIncorrect: (wrongBlocks: string[]) => void;
 }
 
+function shuffleArray<T>(arr: T[]): T[] {
+  return [...arr].sort(() => Math.random() - 0.5);
+}
+
 export default function ParagraphConstructor({
   blocksKz,
-  blocksRu,
   correctOrder,
+  kzText,
   onCorrect,
   onIncorrect,
 }: ParagraphConstructorProps) {
   const [mode, setMode] = useState<ConstructorMode>('sentence');
 
-  const allBlocks = mode === 'sentence' ? blocksKz : blocksRu;
+  const sentenceBlocks = blocksKz;
+  const wordBlocks = splitWords(kzText);
 
-  const [available, setAvailable] = useState<string[]>(() => [...allBlocks].sort(() => Math.random() - 0.5));
+  const allBlocks = mode === 'sentence' ? sentenceBlocks : wordBlocks;
+  const order = mode === 'sentence' ? correctOrder : wordBlocks;
+
+  const [available, setAvailable] = useState<string[]>(() => shuffleArray(allBlocks));
   const [placed, setPlaced] = useState<string[]>([]);
   const [wrongIndices, setWrongIndices] = useState<Set<number>>(new Set());
   const [checked, setChecked] = useState(false);
@@ -125,7 +137,7 @@ export default function ParagraphConstructor({
     const indices = new Set<number>();
 
     for (let i = 0; i < placed.length; i++) {
-      if (i >= correctOrder.length || placed[i] !== correctOrder[i]) {
+      if (i >= order.length || placed[i] !== order[i]) {
         wrong.push(placed[i]);
         indices.add(i);
       }
@@ -133,13 +145,13 @@ export default function ParagraphConstructor({
 
     setWrongIndices(indices);
 
-    if (wrong.length === 0 && placed.length === correctOrder.length) {
+    if (wrong.length === 0 && placed.length === order.length) {
       setSuccess(true);
       onCorrect();
     } else {
       onIncorrect(wrong);
     }
-  }, [placed, correctOrder, onCorrect, onIncorrect]);
+  }, [placed, order, onCorrect, onIncorrect]);
 
   return (
     <div className="card space-y-4">

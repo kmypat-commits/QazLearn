@@ -199,8 +199,8 @@ export default function Paragraphs() {
               <h3 className="font-medium mb-3">{entry.title}</h3>
               <ParagraphConstructor
                 blocksKz={entry.constructorBlocksKz}
-                blocksRu={entry.constructorBlocksRu}
                 correctOrder={entry.constructorBlocksKz}
+                kzText={entry.kzText}
                 onCorrect={handleConstructorCorrect}
                 onIncorrect={() => {}}
               />
