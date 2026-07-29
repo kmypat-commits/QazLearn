@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
 import type { DictionaryEntry, ProgressEntry, AnswerRating, PracticeMode, Page } from './types/dictionary';
 import { parseCsv } from './lib/csv';
+import { supabase, isSupabaseConfigured } from './lib/supabase';
 import {
   loadDictionary, saveDictionary,
-  loadProgress, saveProgress,
+  loadProgress as loadProgressLocal, saveProgress as saveProgressLocal,
   getOrCreateProgress,
   loadTheme, saveTheme,
-  updateStreak, recordAnswer,
+  updateStreak as updateStreakLocal, recordAnswer as recordAnswerLocal,
 } from './lib/storage';
+import * as db from './lib/db';
 import { updateProgress, needsReview } from './lib/spacedRepetition';
 import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
@@ -16,6 +18,7 @@ import Rules from './pages/Rules';
 import Practice from './pages/Practice';
 import ProgressView from './pages/Progress';
 import ImportCsv from './pages/ImportCsv';
+import Auth from './pages/Auth';
 import csvRaw from './assets/kazakh_learning_dictionary.csv?raw';
 
 const NAV_SECTIONS: { label: string; items: { id: Page; label: string; icon: string }[] }[] = [
@@ -60,6 +63,8 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [menuOpen, setMenuOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [authed, setAuthed] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [practiceFilter, setPracticeFilter] = useState<{ ids?: number[]; mode?: PracticeMode; ruleIds?: string[] }>({});
   const [pageFilter, setPageFilter] = useState<{ status?: string }>({});
 
@@ -67,27 +72,61 @@ export default function App() {
     const savedTheme = loadTheme();
     setTheme(savedTheme);
     document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+  }, []);
 
-    const dict = loadDictionary();
-    const prog = loadProgress();
+  useEffect(() => {
+    async function init() {
+      if (isSupabaseConfigured()) {
+        const { data: { session } } = await supabase.auth.getSession();
+        setAuthed(!!session);
 
-    if (dict.length > 0) {
-      setEntries(dict);
-      setProgress(prog);
-      setLoaded(true);
-    } else {
-      try {
-        const parsed = parseCsv(csvRaw);
-        setEntries(parsed);
-        saveDictionary(parsed);
-      } catch (err) {
-        console.error('Failed to parse CSV:', err);
+        supabase.auth.onAuthStateChange((_event, session) => {
+          setAuthed(!!session);
+        });
+      } else {
+        setAuthed(true);
+      }
+      setAuthChecking(false);
+    }
+    init();
+  }, []);
+
+  useEffect(() => {
+    if (!authed) return;
+
+    async function loadData() {
+      const dict = loadDictionary();
+      let prog = loadProgressLocal();
+
+      if (isSupabaseConfigured()) {
+        const remote = await db.loadProgress();
+        if (Object.keys(remote).length > 0) {
+          prog = remote;
+        }
+      }
+
+      if (dict.length > 0) {
+        setEntries(dict);
+        setProgress(prog);
+      } else {
+        try {
+          const parsed = parseCsv(csvRaw);
+          setEntries(parsed);
+          saveDictionary(parsed);
+        } catch (err) {
+          console.error('Failed to parse CSV:', err);
+        }
       }
       setLoaded(true);
-    }
 
-    updateStreak();
-  }, []);
+      if (isSupabaseConfigured()) {
+        await db.updateStreak();
+      } else {
+        updateStreakLocal();
+      }
+    }
+    loadData();
+  }, [authed]);
 
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
@@ -100,11 +139,22 @@ export default function App() {
     setProgress(prev => {
       const newProgress = { ...prev };
       const prog = getOrCreateProgress(entryId, newProgress);
-      newProgress[entryId] = updateProgress({ ...prog }, rating);
-      saveProgress(newProgress);
-      if (rating === 'good' || rating === 'easy') recordAnswer(true);
-      else recordAnswer(false);
-      updateStreak();
+      const updated = updateProgress({ ...prog }, rating);
+      newProgress[entryId] = updated;
+      saveProgressLocal(newProgress);
+      db.saveProgressEntry(entryId, updated);
+      if (rating === 'good' || rating === 'easy') {
+        recordAnswerLocal(true);
+        db.recordAnswer(true);
+      } else {
+        recordAnswerLocal(false);
+        db.recordAnswer(false);
+      }
+      if (isSupabaseConfigured()) {
+        db.updateStreak();
+      } else {
+        updateStreakLocal();
+      }
       return newProgress;
     });
   }, []);
@@ -151,6 +201,21 @@ export default function App() {
     };
     return <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">{paths[icon]}</svg>;
   };
+
+  if (authChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl font-bold mb-2">QazLearn</div>
+          <p className="text-[var(--color-text-secondary)]">Загрузка...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!authed) {
+    return <Auth onAuthSuccess={() => setAuthed(true)} />;
+  }
 
   if (!loaded) {
     return (

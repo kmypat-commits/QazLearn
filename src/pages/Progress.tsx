@@ -1,7 +1,10 @@
+import { useState, useEffect } from 'react';
 import type { DictionaryEntry, ProgressEntry } from '../types/dictionary';
 import { isMastered, needsReview } from '../lib/spacedRepetition';
-import { loadStreak, loadDailyStats } from '../lib/storage';
-import { loadRuleProgress } from '../lib/ruleStorage';
+import { loadStreak as loadStreakLocal, loadDailyStats as loadDailyStatsLocal } from '../lib/storage';
+import { loadRuleProgress as loadRuleProgressLocal } from '../lib/ruleStorage';
+import { isSupabaseConfigured } from '../lib/supabase';
+import * as db from '../lib/db';
 import ProgressBar from '../components/ProgressBar';
 
 interface ProgressViewProps {
@@ -32,6 +35,25 @@ const GOALS = [
 ];
 
 export default function ProgressView({ entries, progress, onNavigate }: ProgressViewProps) {
+  const [streak, setStreak] = useState(0);
+  const [dailyStats, setDailyStats] = useState({ date: '', correct: 0, wrong: 0 });
+  const [ruleProgress, setRuleProgress] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    async function load() {
+      if (isSupabaseConfigured()) {
+        setStreak(await db.loadStreak());
+        setDailyStats(await db.loadDailyStats());
+        setRuleProgress(await db.loadRuleProgress());
+      } else {
+        setStreak(loadStreakLocal());
+        setDailyStats(loadDailyStatsLocal());
+        setRuleProgress(loadRuleProgressLocal());
+      }
+    }
+    load();
+  }, []);
+
   const words = entries.filter(e => e.type === 'word');
   const phrases = entries.filter(e => e.type === 'phrase');
 
@@ -50,13 +72,6 @@ export default function ProgressView({ entries, progress, onNavigate }: Progress
     return p && needsReview(p) && p.reviewStatus !== 'mastered';
   }).length;
 
-  const streak = loadStreak();
-  const dailyStats = loadDailyStats();
-  const todayCorrect = dailyStats.correct;
-  const todayWrong = dailyStats.wrong;
-  const totalAnswered = todayCorrect + todayWrong;
-  const accuracy = totalAnswered > 0 ? Math.round((todayCorrect / totalAnswered) * 100) : 0;
-
   const totalLearning = entries.filter(e => {
     const p = progress[e.id];
     return p && (p.reviewStatus === 'learning' || p.reviewStatus === 'review');
@@ -67,11 +82,15 @@ export default function ProgressView({ entries, progress, onNavigate }: Progress
     return !p || p.reviewStatus === 'new';
   }).length;
 
-  const ruleProgress = loadRuleProgress();
   const ruleIds = Object.keys(ruleProgress);
   const totalRules = ruleIds.length;
   const learnedRules = ruleIds.filter(id => ruleProgress[id].status === 'learned').length;
   const reviewRules = ruleIds.filter(id => ruleProgress[id].status === 'review').length;
+
+  const todayCorrect = dailyStats.correct;
+  const todayWrong = dailyStats.wrong;
+  const totalAnswered = todayCorrect + todayWrong;
+  const accuracy = totalAnswered > 0 ? Math.round((todayCorrect / totalAnswered) * 100) : 0;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">

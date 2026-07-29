@@ -1,0 +1,48 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "explore",
+
+  "command": {
+    "git": {
+      "description": "Stage all changed files, commit with a message, and push to GitHub.",
+      "agent": "general",
+      "template": "Stage all modified tracked files, commit with the given message, and push to `origin/master`.\n\n1. Run `git status` and `git diff --stat` to see what's changed.\n2. Stage only modified tracked files: `git add -u` (ignore untracked CSV exports).\n3. Commit with message `$ARGUMENTS` (if empty, use `\"update\"`).\n4. Push: `git push`.\n5. If `--deploy` flag is present, also run `vercel --prod --yes`."
+    }
+  },
+
+  "agent": {
+    "explore": {
+      "color": "#00BCD4",
+      "mode": "all",
+      "description": "Поиск по коду, ответы на вопросы об архитектуре."
+    },
+    "frontend": {
+      "color": "#4CAF50",
+      "mode": "all",
+      "description": "React/TSX/Tailwind — компоненты, страницы, стили."
+    },
+    "review": {
+      "color": "#FFC107",
+      "mode": "all",
+      "description": "Code review, поиск багов, проверка стиля."
+    },
+    "refactor": {
+      "color": "#E91E63",
+      "mode": "all",
+      "description": "Рефакторинг, удаление мёртвого кода, оптимизация."
+    }
+  },
+
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": false
+    }
+  }
+}

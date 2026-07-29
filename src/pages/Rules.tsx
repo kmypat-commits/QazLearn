@@ -1,7 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
-import type { GrammarRule } from '../types/dictionary';
+import type { GrammarRule, RuleProgress } from '../types/dictionary';
 import { parseGrammarRulesCsv, searchRules } from '../lib/grammarRules';
-import { loadRuleProgress, setRuleStatus, getRuleStatus } from '../lib/ruleStorage';
+import { loadRuleProgress as loadLocal, setRuleStatus as setLocal } from '../lib/ruleStorage';
+import { isSupabaseConfigured } from '../lib/supabase';
+import * as db from '../lib/db';
 import RulesSidebar from '../components/rules/RulesSidebar';
 import RuleCard from '../components/rules/RuleCard';
 
@@ -21,10 +23,11 @@ export default function Rules({ onGoToPractice }: Props) {
   useEffect(() => {
     fetch('/data/kazakh_grammar_rules.csv')
       .then(r => r.text())
-      .then(text => {
+      .then(async text => {
         const parsed = parseGrammarRulesCsv(text);
         setRules(parsed);
-        setRuleProgress(loadRuleProgress());
+        const prog = isSupabaseConfigured() ? await db.loadRuleProgress() : loadLocal();
+        setRuleProgress(prog);
         setLoaded(true);
         if (parsed.length > 0) setSelectedId(parsed[0].id);
       })
@@ -66,8 +69,10 @@ export default function Rules({ onGoToPractice }: Props) {
   }, [ruleProgress]);
 
   const handleSetStatus = (id: string, status: 'learned' | 'review') => {
-    setRuleStatus(id, status);
-    setRuleProgress(prev => ({ ...prev, [id]: getRuleStatus(id) }));
+    const entry: RuleProgress = { id, status, lastReviewedAt: new Date().toISOString() };
+    setLocal(id, status);
+    db.saveRuleProgressEntry(id, entry);
+    setRuleProgress(prev => ({ ...prev, [id]: entry }));
   };
 
   const handleGoToPractice = (ids: string[]) => {
@@ -104,7 +109,7 @@ export default function Rules({ onGoToPractice }: Props) {
         {selectedRule ? (
           <RuleCard
             rule={selectedRule}
-            progress={getRuleStatus(selectedRule.id)}
+            progress={ruleProgress[selectedRule.id] || null}
             onSetStatus={handleSetStatus}
             onGoToPractice={handleGoToPractice}
           />
