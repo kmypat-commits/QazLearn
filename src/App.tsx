@@ -15,6 +15,8 @@ import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
 import Phrases from './pages/Phrases';
 import Rules from './pages/Rules';
+import Paragraphs from './pages/Paragraphs';
+import ParagraphErrors from './pages/ParagraphErrors';
 import Practice from './pages/Practice';
 import ProgressView from './pages/Progress';
 import ImportCsv from './pages/ImportCsv';
@@ -29,12 +31,14 @@ const NAV_SECTIONS: { label: string; items: { id: Page; label: string; icon: str
       { id: 'words', label: 'Слова', icon: 'book' },
       { id: 'phrases', label: 'Фразы', icon: 'message' },
       { id: 'rules', label: 'Правила', icon: 'document' },
+      { id: 'paragraphs', label: 'Абзацы', icon: 'lines' },
       { id: 'practice', label: 'Практика', icon: 'play' },
     ],
   },
   {
     label: 'Статистика',
     items: [
+      { id: 'paragraphErrors', label: 'Мои ошибки', icon: 'cross' },
       { id: 'progress', label: 'Прогресс', icon: 'chart' },
     ],
   },
@@ -51,7 +55,9 @@ const PAGE_TITLES: Record<Page, string> = {
   words: 'Слова',
   phrases: 'Фразы',
   rules: 'Правила',
+  paragraphs: 'Абзацы',
   practice: 'Практика',
+  paragraphErrors: 'Мои ошибки',
   progress: 'Прогресс',
   import: 'Импорт CSV',
 };
@@ -195,6 +201,8 @@ export default function App() {
       book: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/></>,
       message: <><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 8.511c.884.284 1.5 1.128 1.5 2.097v4.286c0 1.136-.847 2.1-1.98 2.193-.34.027-.68.052-1.02.072v3.091l-3-3c-1.354 0-2.694-.055-4.02-.163a2.115 2.115 0 0 1-.825-.242m9.345-8.334a2.126 2.126 0 0 0-.476-.095 48.64 48.64 0 0 0-8.048 0c-1.131.094-1.976 1.057-1.976 2.192v4.286c0 .837.46 1.58 1.155 1.951m9.345-8.334V6.637c0-1.621-1.152-3.026-2.76-3.235A48.455 48.455 0 0 0 11.25 3c-2.115 0-4.198.137-6.24.402-1.608.209-2.76 1.614-2.76 3.235v6.226c0 1.621 1.152 3.026 2.76 3.235.577.075 1.157.14 1.74.194V21l4.155-4.155"/></>,
       document: <><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"/></>,
+      lines: <><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/></>,
+      cross: <><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/></>,
       play: <><path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z"/></>,
       chart: <><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z"/></>,
       upload: <><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"/></>,
@@ -362,6 +370,8 @@ export default function App() {
           {currentPage === 'words' && <Words key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
           {currentPage === 'phrases' && <Phrases key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
           {currentPage === 'rules' && <Rules onGoToPractice={goToPractice} />}
+          {currentPage === 'paragraphs' && <Paragraphs />}
+          {currentPage === 'paragraphErrors' && <ParagraphErrors />}
           {currentPage === 'practice' && <Practice key={JSON.stringify(practiceFilter)} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} filterIds={practiceFilter.ids} initialMode={practiceFilter.mode} ruleIds={practiceFilter.ruleIds} />}
           {currentPage === 'progress' && <ProgressView entries={entries} progress={progress} onNavigate={goToPage} />}
           {currentPage === 'import' && <ImportCsv entries={entries} onImport={handleImport} />}

@@ -13,6 +13,7 @@ export interface DictionaryEntry {
 }
 
 export type Category = 'office' | 'official' | 'it_ai' | 'general';
+export type ParagraphCategory = 'general' | 'office' | 'official' | 'it_ai' | 'route';
 export type Status = 'new' | 'learning' | 'mastered';
 export type KnowledgeLevel = 0 | 1 | 2 | 3 | 4 | 5;
 
@@ -69,11 +70,91 @@ export interface RuleProgress {
   lastReviewedAt: string | null;
 }
 
+export type ParagraphDirection = 'ru_kz' | 'kz_ru';
+
+export type ParagraphEntryStatus = 'new' | 'learning' | 'hard' | 'mastered';
+
+export interface ParagraphEntry {
+  id: string;
+  title: string;
+  ruText: string;
+  kzText: string;
+  alternativeKz: string[];
+  alternativeRu: string[];
+  category: ParagraphCategory;
+  difficulty: number;
+  keyWords: string[];
+  grammarFocus: string[];
+  constructorBlocksKz: string[];
+  constructorBlocksRu: string[];
+  explanation: string;
+  status: ParagraphEntryStatus;
+  source: string;
+  tags: string[];
+}
+
+export interface ParagraphAttempt {
+  paragraphId: string;
+  direction: ParagraphDirection;
+  userAnswer: string;
+  createdAt: string;
+  usedHints: number;
+  revealedAnswer: boolean;
+  errors: ParagraphError[];
+}
+
+export type ParagraphErrorType =
+  | 'spelling'
+  | 'vocabulary'
+  | 'accusative'
+  | 'genitive'
+  | 'dative'
+  | 'ablative'
+  | 'possessive'
+  | 'verb_form'
+  | 'participle'
+  | 'converb'
+  | 'word_order'
+  | 'collocation'
+  | 'missing_word'
+  | 'extra_word'
+  | 'punctuation';
+
+export interface ParagraphError {
+  id: string;
+  paragraphId: string;
+  sentenceIndex: number;
+  userFragment: string;
+  correctFragment: string;
+  errorType: ParagraphErrorType;
+  explanation: string;
+  ruleId?: string;
+  repeatCount: number;
+  status: 'new' | 'learning' | 'repeated' | 'mastered';
+  createdAt: string;
+  lastRepeatedAt?: string;
+}
+
+export interface ParagraphProgress {
+  id: string;
+  attempts: number;
+  correctSentences: number;
+  partialSentences: number;
+  totalErrors: number;
+  usedHints: number;
+  status: ParagraphEntryStatus;
+  lastAttemptAt: string | null;
+  draft: string;
+  isHard: boolean;
+}
+
 export type Page =
   | 'dashboard'
   | 'words'
   | 'phrases'
   | 'rules'
+  | 'paragraphs'
   | 'practice'
+  | 'paragraphErrors'
   | 'progress'
   | 'import';
