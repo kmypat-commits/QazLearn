@@ -40,7 +40,52 @@ export async function saveProgressEntry(entryId: number, progress: ProgressEntry
     review_status: progress.reviewStatus,
     next_review_at: progress.nextReviewAt,
     last_reviewed_at: progress.lastReviewedAt,
-  });
+  }, { onConflict: 'user_id,entry_id' });
+}
+
+export async function saveProgressAll(map: Record<number, ProgressEntry>): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const userId = (await supabase.auth.getUser()).data.user?.id;
+  if (!userId) return;
+  const rows = Object.entries(map).map(([entryId, p]) => ({
+    user_id: userId,
+    entry_id: Number(entryId),
+    knowledge_level: p.knowledgeLevel,
+    correct_answers: p.correctAnswers,
+    wrong_answers: p.wrongAnswers,
+    consecutive_correct: p.consecutiveCorrect,
+    attempts: p.attempts,
+    review_status: p.reviewStatus,
+    next_review_at: p.nextReviewAt,
+    last_reviewed_at: p.lastReviewedAt,
+  }));
+  if (rows.length === 0) return;
+  await supabase.from('progress').upsert(rows, { onConflict: 'user_id,entry_id' });
+}
+
+/* User Data (dictionary, paragraphs) */
+
+export async function loadUserData(): Promise<Record<string, unknown>> {
+  if (!isSupabaseConfigured()) return {};
+  const { data, error } = await supabase
+    .from('user_data')
+    .select('key, value');
+  if (error || !data) return {};
+  const map: Record<string, unknown> = {};
+  for (const row of data) {
+    map[row.key] = row.value;
+  }
+  return map;
+}
+
+export async function saveUserData(key: string, value: unknown): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  await supabase.from('user_data').upsert({
+    user_id: (await supabase.auth.getUser()).data.user?.id,
+    key,
+    value,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'user_id,key' });
 }
 
 /* Rule Progress */
@@ -67,7 +112,7 @@ export async function saveRuleProgressEntry(ruleId: string, progress: RuleProgre
     rule_id: ruleId,
     status: progress.status,
     last_reviewed_at: progress.lastReviewedAt,
-  });
+  }, { onConflict: 'user_id,rule_id' });
 }
 
 /* Daily Stats */
@@ -81,7 +126,7 @@ export async function loadDailyStats(): Promise<DailyStats> {
     .from('daily_stats')
     .select('*')
     .eq('date', today)
-    .single();
+    .maybeSingle();
   if (error || !data) {
     return { date: today, correct: 0, wrong: 0 };
   }
@@ -95,7 +140,7 @@ export async function recordAnswer(correct: boolean): Promise<void> {
     .from('daily_stats')
     .select('*')
     .eq('date', today)
-    .single();
+    .maybeSingle();
   if (data) {
     await supabase
       .from('daily_stats')
@@ -121,7 +166,7 @@ export async function loadStreak(): Promise<number> {
   const { data, error } = await supabase
     .from('streaks')
     .select('current_streak')
-    .single();
+    .maybeSingle();
   if (error || !data) return 0;
   return data.current_streak;
 }
@@ -136,7 +181,7 @@ export async function updateStreak(): Promise<number> {
   const { data } = await supabase
     .from('streaks')
     .select('*')
-    .single();
+    .maybeSingle();
 
   if (!data) {
     await supabase.from('streaks').insert({

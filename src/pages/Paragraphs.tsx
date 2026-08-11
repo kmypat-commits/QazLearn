@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ParagraphEntry, ParagraphDirection, ParagraphProgress, ParagraphError, ParagraphErrorType } from '../types/dictionary';
 import { loadParagraphEntries, loadParagraphProgress, loadParagraphErrors, addParagraphError, getParagraphProgress, updateParagraphProgress } from '../lib/paragraphs/storage';
+import * as db from '../lib/db';
+import { isSupabaseConfigured } from '../lib/supabase';
 import ParagraphFilters from '../components/paragraphs/ParagraphFilters';
 import ParagraphTask from '../components/paragraphs/ParagraphTask';
 import ParagraphConstructor from '../components/paragraphs/ParagraphConstructor';
@@ -74,6 +76,10 @@ export default function Paragraphs() {
     };
     updateParagraphProgress(currentEntry.id, updated);
     setProgress(loadParagraphProgress());
+    if (isSupabaseConfigured()) {
+      db.saveUserData('paragraphProgress', loadParagraphProgress());
+      db.saveUserData('paragraphErrors', loadParagraphErrors());
+    }
 
     for (const sentence of result.sentences) {
       for (const err of sentence.errors) {

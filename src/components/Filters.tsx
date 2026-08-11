@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { Category, Status } from '../types/dictionary';
 
 interface FiltersProps {
@@ -12,17 +13,17 @@ interface FiltersProps {
   sort: SortOption;
   onSortChange: (val: SortOption) => void;
   type?: 'word' | 'phrase';
+  categoryOptions?: string[];
 }
 
 export type SortOption = 'alpha' | 'difficulty' | 'date';
 
-const categories: { value: Category | ''; label: string }[] = [
-  { value: '', label: 'Все категории' },
-  { value: 'office', label: 'Офис' },
-  { value: 'official', label: 'Официально-деловой' },
-  { value: 'it_ai', label: 'IT и ИИ' },
-  { value: 'general', label: 'Общее' },
-];
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+  office: 'Офис',
+  official: 'Официально-деловой',
+  it_ai: 'IT и ИИ',
+  general: 'Общее',
+};
 
 const statuses: { value: Status | ''; label: string }[] = [
   { value: '', label: 'Все статусы' },
@@ -37,8 +38,21 @@ export default function Filters({
   status, onStatusChange,
   difficulty, onDifficultyChange,
   sort, onSortChange,
+  categoryOptions,
 }: FiltersProps) {
-  return (
+  const categories = useMemo(() => {
+    const seen = new Set<string>();
+    return [
+      { value: '', label: 'Все категории' },
+      ...(categoryOptions && categoryOptions.length > 0 ? categoryOptions : Object.keys(DEFAULT_CATEGORY_LABELS))
+        .filter(c => {
+          if (seen.has(c)) return false;
+          seen.add(c);
+          return true;
+        })
+        .map(c => ({ value: c, label: DEFAULT_CATEGORY_LABELS[c] || c })),
+    ];
+  }, [categoryOptions]);  return (
     <div className="flex flex-col gap-3">
       <input
         type="text"

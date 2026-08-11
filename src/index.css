@@ -3,37 +3,41 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --color-bg: #f5f5f7; /* Apple System Gray 6 */
-  --color-surface: #ffffff; /* Apple White */
-  --color-text: #1d1d1f; /* Apple Dark Gray */
-  --color-text-secondary: #86868b; /* Apple Gray */
-  --color-border: #e8e8ed; /* Apple Silver Border */
-  --color-primary: #0071e3; /* Apple SF Blue */
-  --color-primary-hover: #005bb5;
-  --color-success: #34c759; /* iOS Green */
-  --color-warning: #ff9500; /* iOS Orange */
-  --color-danger: #ff3b30; /* iOS Red */
+  --color-bg: #f5f6fb; /* Soft lavender-gray */
+  --color-surface: #ffffff;
+  --color-text: #171922;
+  --color-text-secondary: #636a7d;
+  --color-border: #e6e8f2;
+  --color-primary: #6d5ef0; /* Violet-indigo */
+  --color-primary-hover: #5a4adf;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
   --color-card-bg: #ffffff;
-  --color-mask: rgba(0, 0, 0, 0.3);
+  --color-mask: rgba(17, 19, 31, 0.35);
 }
 
 .dark {
-  --color-bg: #000000; /* Apple Pure Black */
-  --color-surface: #1c1c1e; /* Apple System Gray 6 (Dark) */
-  --color-text: #f5f5f7; /* Apple Light Gray */
-  --color-text-secondary: #86868b; /* Apple Gray */
-  --color-border: #2c2c2e; /* Apple Dark Gray 4 */
-  --color-primary: #0a84ff; /* Apple dark primary blue */
-  --color-primary-hover: #409cff;
-  --color-success: #30d158; /* iOS Dark Green */
-  --color-warning: #ff9f0a; /* iOS Dark Orange */
-  --color-danger: #ff453a; /* iOS Dark Red */
-  --color-card-bg: #1c1c1e;
-  --color-mask: rgba(0, 0, 0, 0.6);
+  --color-bg: #0b0d15; /* Deep blue-black */
+  --color-surface: #141826;
+  --color-text: #f2f3f8;
+  --color-text-secondary: #9aa0b6;
+  --color-border: #272d42;
+  --color-primary: #8b7df8;
+  --color-primary-hover: #9d91fa;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-card-bg: #1a1f31;
+  --color-mask: rgba(0, 0, 0, 0.55);
 }
 
 body {
   background-color: var(--color-bg);
+  background-image:
+    radial-gradient(1200px 600px at 100% -10%, color-mix(in srgb, var(--color-primary) 9%, transparent), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--color-primary) 7%, transparent), transparent 55%);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   letter-spacing: -0.011em;
@@ -46,7 +50,7 @@ body {
   border: 1px solid var(--color-border);
   border-radius: 1.25rem; /* 20px - Apple Style */
   padding: 1.5rem;
-  box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 24px 0 rgba(23, 25, 34, 0.04);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -55,11 +59,11 @@ body {
 }
 .card-hover:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12px 30px rgba(23, 25, 34, 0.07);
 }
 .dark .card-hover:hover {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
-  border-color: #3a3a3c;
+  border-color: #333a52;
 }
 .card-hover:active {
   transform: scale(0.98);
@@ -84,11 +88,13 @@ body {
 }
 
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 75%, var(--color-success)));
   color: #fff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--color-primary) 35%, transparent);
 }
 .btn-primary:hover {
-  opacity: 0.92;
+  opacity: 0.94;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
 .btn-success {
@@ -116,7 +122,7 @@ body {
 }
 
 .btn-ghost {
-  background-color: var(--color-border);
+  background-color: color-mix(in srgb, var(--color-border) 80%, transparent);
   color: var(--color-text);
 }
 .btn-ghost:hover {
@@ -134,36 +140,30 @@ body {
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background-color: rgba(134, 134, 139, 0.12);
+  background-color: rgba(99, 106, 125, 0.12);
   color: var(--color-text-secondary);
   letter-spacing: -0.01em;
 }
 
 .badge-learning {
-  background-color: rgba(0, 113, 227, 0.1);
-  color: #0071e3;
-}
-.dark .badge-learning {
-  background-color: rgba(10, 132, 255, 0.15);
-  color: #0a84ff;
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
 }
 
 .badge-new {
-  background-color: rgba(255, 149, 0, 0.1);
-  color: #d16e00;
+  background-color: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  color: color-mix(in srgb, var(--color-warning) 80%, #000);
 }
 .dark .badge-new {
-  background-color: rgba(255, 159, 10, 0.15);
-  color: #ff9f0a;
+  color: var(--color-warning);
 }
 
 .badge-mastered {
-  background-color: rgba(52, 199, 89, 0.1);
-  color: #1c8b39;
+  background-color: color-mix(in srgb, var(--color-success) 14%, transparent);
+  color: color-mix(in srgb, var(--color-success) 75%, #000);
 }
 .dark .badge-mastered {
-  background-color: rgba(48, 209, 88, 0.15);
-  color: #30d158;
+  color: var(--color-success);
 }
 
 input[type="text"], select {
@@ -178,11 +178,11 @@ input[type="text"], select {
 }
 input[type="text"]:focus, select:focus {
   border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 14%, transparent) !important;
   outline: none;
 }
 .dark input[type="text"]:focus, .dark select:focus {
-  box-shadow: 0 0 0 4px rgba(10, 132, 255, 0.2) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 22%, transparent) !important;
 }
 
 @keyframes flip {

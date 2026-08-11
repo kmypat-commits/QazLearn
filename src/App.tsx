@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react';
-import type { DictionaryEntry, ProgressEntry, AnswerRating, PracticeMode, Page } from './types/dictionary';
+import type { DictionaryEntry, ProgressEntry, AnswerRating, PracticeMode, Page, ParagraphProgress, ParagraphError } from './types/dictionary';
 import { parseCsv } from './lib/csv';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import {
@@ -9,6 +9,11 @@ import {
   loadTheme, saveTheme,
   updateStreak as updateStreakLocal, recordAnswer as recordAnswerLocal,
 } from './lib/storage';
+import {
+  saveParagraphEntries,
+  saveParagraphProgress,
+  saveParagraphErrors,
+} from './lib/paragraphs/storage';
 import * as db from './lib/db';
 import { updateProgress, needsReview } from './lib/spacedRepetition';
 import Dashboard from './pages/Dashboard';
@@ -62,6 +67,25 @@ const PAGE_TITLES: Record<Page, string> = {
   import: 'Импорт CSV',
 };
 
+function mergeProgress(
+  remote: Record<number, ProgressEntry>,
+  local: Record<number, ProgressEntry>,
+): Record<number, ProgressEntry> {
+  const merged: Record<number, ProgressEntry> = { ...remote };
+  for (const [id, localEntry] of Object.entries(local)) {
+    const numId = Number(id);
+    const remoteEntry = merged[numId];
+    if (!remoteEntry) {
+      merged[numId] = localEntry;
+      continue;
+    }
+    const localTime = localEntry.lastReviewedAt ? new Date(localEntry.lastReviewedAt).getTime() : 0;
+    const remoteTime = remoteEntry.lastReviewedAt ? new Date(remoteEntry.lastReviewedAt).getTime() : 0;
+    if (localTime > remoteTime) merged[numId] = localEntry;
+  }
+  return merged;
+}
+
 export default function App() {
   const [entries, setEntries] = useState<DictionaryEntry[]>([]);
   const [progress, setProgress] = useState<Record<number, ProgressEntry>>({});
@@ -101,13 +125,36 @@ export default function App() {
     if (!authed) return;
 
     async function loadData() {
-      const dict = loadDictionary();
-      let prog = loadProgressLocal();
+      const local = loadProgressLocal();
+
+      let prog = local;
+      let dict = loadDictionary();
 
       if (isSupabaseConfigured()) {
         const remote = await db.loadProgress();
-        if (Object.keys(remote).length > 0) {
-          prog = remote;
+        prog = mergeProgress(remote, local);
+        saveProgressLocal(prog);
+        if (Object.keys(prog).length > 0) {
+          db.saveProgressAll(prog);
+        }
+
+        const userData = await db.loadUserData();
+        const remoteDict = userData.dictionary;
+        if (Array.isArray(remoteDict) && remoteDict.length > 0) {
+          dict = remoteDict;
+          saveDictionary(dict);
+        }
+        const remoteParagraphs = userData.paragraphs;
+        if (Array.isArray(remoteParagraphs)) {
+          saveParagraphEntries(remoteParagraphs);
+        }
+        const remoteParagraphProgress = userData.paragraphProgress;
+        if (remoteParagraphProgress && typeof remoteParagraphProgress === 'object') {
+          saveParagraphProgress(remoteParagraphProgress as Record<string, ParagraphProgress>);
+        }
+        const remoteParagraphErrors = userData.paragraphErrors;
+        if (Array.isArray(remoteParagraphErrors)) {
+          saveParagraphErrors(remoteParagraphErrors as ParagraphError[]);
         }
       }
 
@@ -175,6 +222,7 @@ export default function App() {
   const handleImport = useCallback((newEntries: DictionaryEntry[]) => {
     setEntries(newEntries);
     saveDictionary(newEntries);
+    db.saveUserData('dictionary', newEntries);
   }, []);
 
   const goToPractice = useCallback((options?: { ids?: number[]; mode?: PracticeMode; ruleIds?: string[] }) => {
@@ -201,6 +249,13 @@ export default function App() {
     const p = progress[e.id];
     return p && needsReview(p) && p.reviewStatus !== 'mastered';
   }).length;
+
+  const dueIds = entries
+    .filter(e => {
+      const p = progress[e.id];
+      return p && needsReview(p) && p.reviewStatus !== 'mastered';
+    })
+    .map(e => e.id);
 
   const renderIcon = (icon: string) => {
     const paths: Record<string, ReactNode> = {
@@ -245,12 +300,14 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]/50">
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)]/60 backdrop-blur-xl">
         <div className="p-5 border-b border-[var(--color-border)]">
-          <button className="flex items-center gap-2 text-lg font-bold" onClick={() => navigateTo('dashboard')}>
-            <svg className="w-6 h-6 text-[var(--color-primary)]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
-            </svg>
+          <button className="flex items-center gap-2.5 text-lg font-bold" onClick={() => navigateTo('dashboard')}>
+            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-success)] flex items-center justify-center text-white shadow-lg shadow-[var(--color-primary)]/30">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"></path>
+              </svg>
+            </span>
             <span className="font-extrabold tracking-tight">QazLearn</span>
           </button>
         </div>
@@ -266,10 +323,12 @@ export default function App() {
                       key={item.id}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold transition-all duration-200 ${
                         isActive
-                          ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                          ? 'bg-gradient-to-r from-[var(--color-primary)]/15 to-transparent text-[var(--color-primary)]'
                           : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text)] hover:bg-black/5 dark:hover:bg-white/5'
                       }`}
-                      onClick={() => navigateTo(item.id)}
+                      onClick={() => item.id === 'practice' && dueForReview > 0
+                        ? goToPractice({ ids: dueIds, mode: 'flashcard' })
+                        : navigateTo(item.id)}
                     >
                       {renderIcon(item.icon)}
                       <span>{item.label}</span>
@@ -308,7 +367,7 @@ export default function App() {
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="sticky top-0 z-50 bg-[var(--color-surface)]/80 backdrop-blur-md border-b border-[var(--color-border)]/50">
+        <header className="sticky top-0 z-50 bg-[var(--color-surface)]/70 backdrop-blur-xl border-b border-[var(--color-border)]/60">
           <div className="flex items-center justify-between px-4 py-2.5">
             <div className="flex items-center gap-3">
               <button
@@ -327,7 +386,7 @@ export default function App() {
               {dueForReview > 0 && currentPage !== 'practice' && (
                 <button
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-[var(--color-warning)]/10 text-[var(--color-warning)]"
-                  onClick={() => navigateTo('practice')}
+                  onClick={() => goToPractice({ ids: dueIds, mode: 'flashcard' })}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-warning)] animate-pulse" />
                   <span>{dueForReview}</span>
@@ -363,7 +422,9 @@ export default function App() {
                                 ? 'bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
                                 : 'text-[var(--color-text-secondary)] hover:bg-black/5 dark:hover:bg-white/5'
                             }`}
-                            onClick={() => navigateTo(item.id)}
+                            onClick={() => item.id === 'practice' && dueForReview > 0
+                              ? goToPractice({ ids: dueIds, mode: 'flashcard' })
+                              : navigateTo(item.id)}
                           >
                             {renderIcon(item.icon)}
                             <span>{item.label}</span>

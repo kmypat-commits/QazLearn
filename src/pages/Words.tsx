@@ -38,6 +38,11 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
 
   const words = useMemo(() => entries.filter(e => e.type === 'word'), [entries]);
 
+  const categoryOptions = useMemo(
+    () => Array.from(new Set(words.map(e => e.category).filter(Boolean))),
+    [words]
+  );
+
   const masteredCount = useMemo(
     () => words.filter(e => {
       const p = progress[e.id];
@@ -146,6 +151,7 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
           status={status} onStatusChange={setStatus}
           difficulty={difficulty} onDifficultyChange={setDifficulty}
           sort={sort} onSortChange={setSort}
+          categoryOptions={categoryOptions}
         />
 
         <div className="flex gap-2 flex-wrap">
@@ -193,7 +199,7 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
             const p = progress[entry.id];
             const statusInfo = p ? (STATUS_LABELS[p.reviewStatus] || STATUS_LABELS.new) : { label: 'Не изучено', className: 'badge-new' };
             const fb = feedback[entry.id];
-            const fbClass = fb === 'good' || fb === 'easy' ? 'ring-2 ring-green-400' : fb === 'dont-know' ? 'ring-2 ring-red-400' : fb === 'hard' ? 'ring-2 ring-orange-400' : '';
+            const fbClass = fb === 'good' || fb === 'easy' ? 'ring-2 ring-[var(--color-success)]' : fb === 'dont-know' ? 'ring-2 ring-[var(--color-danger)]' : fb === 'hard' ? 'ring-2 ring-[var(--color-warning)]' : '';
             return (
               <div key={entry.id} className={`card card-hover transition-all duration-300 ${fbClass} ${fb ? 'scale-[1.02]' : ''}`}>
                 <div className="flex justify-between items-start mb-2">
@@ -215,17 +221,17 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
                 )}
 
                 {(fb === 'good' || fb === 'easy') && (
-                  <div className="mt-2 text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+                  <div className="mt-2 text-xs font-medium text-[var(--color-success)] flex items-center gap-1">
                     ✓ Запомнил
                   </div>
                 )}
                 {fb === 'dont-know' && (
-                  <div className="mt-2 text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+                  <div className="mt-2 text-xs font-medium text-[var(--color-danger)] flex items-center gap-1">
                     ✗ Нужно повторить
                   </div>
                 )}
                 {fb === 'hard' && (
-                  <div className="mt-2 text-xs font-medium text-orange-600 dark:text-orange-400 flex items-center gap-1">
+                  <div className="mt-2 text-xs font-medium text-[var(--color-warning)] flex items-center gap-1">
                     ⚠ Добавлен в сложные
                   </div>
                 )}
@@ -268,24 +274,24 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
           </div>
 
           <div className="space-y-3">
-            <button className="w-full p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('learning'); }}>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{learningCount}</div>
-              <div className="text-sm text-blue-700 dark:text-blue-300">В процессе</div>
+            <button className="w-full p-3 rounded-xl bg-[var(--color-primary)]/10 border border-[var(--color-primary)]/25 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('learning'); }}>
+              <div className="text-2xl font-bold text-[var(--color-primary)]">{learningCount}</div>
+              <div className="text-sm text-[var(--color-primary)]/80">В процессе</div>
             </button>
 
-            <button className="w-full p-3 rounded-xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setStatus(''); setDifficulty(''); setSearch('__hard__'); }}>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">{hardCount}</div>
-              <div className="text-sm text-orange-700 dark:text-orange-300">Вызывают сложности</div>
+            <button className="w-full p-3 rounded-xl bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/25 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setStatus(''); setDifficulty(''); setSearch('__hard__'); }}>
+              <div className="text-2xl font-bold text-[var(--color-warning)]">{hardCount}</div>
+              <div className="text-sm text-[var(--color-warning)]/80">Вызывают сложности</div>
             </button>
 
-            <button className="w-full p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('mastered'); }}>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{masteredCount}</div>
-              <div className="text-sm text-green-700 dark:text-green-300">Точно знаю</div>
+            <button className="w-full p-3 rounded-xl bg-[var(--color-success)]/10 border border-[var(--color-success)]/25 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('mastered'); }}>
+              <div className="text-2xl font-bold text-[var(--color-success)]">{masteredCount}</div>
+              <div className="text-sm text-[var(--color-success)]/80">Точно знаю</div>
             </button>
 
-            <button className="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('new'); }}>
-              <div className="text-2xl font-bold text-gray-600 dark:text-gray-400">{newCount}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Новые</div>
+            <button className="w-full p-3 rounded-xl bg-[var(--color-border)]/60 border border-[var(--color-border)] text-left cursor-pointer hover:brightness-95 dark:hover:brightness-110 transition-all" onClick={() => { setDifficulty(''); setSearch(''); setStatus('new'); }}>
+              <div className="text-2xl font-bold text-[var(--color-text)]">{newCount}</div>
+              <div className="text-sm text-[var(--color-text-secondary)]">Новые</div>
             </button>
           </div>
 

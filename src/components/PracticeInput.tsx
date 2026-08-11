@@ -96,7 +96,7 @@ export default function PracticeInput({ entry, direction, onAnswer, onSkip }: Pr
                       return (
                         <span
                           key={i}
-                          className={isDiff ? 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200 px-1 rounded' : ''}
+                          className={isDiff ? 'bg-[var(--color-danger)]/20 text-[var(--color-danger)] px-1 rounded' : ''}
                         >
                           {char}
                         </span>

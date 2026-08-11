@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { ParagraphError } from '../types/dictionary';
 import { loadParagraphErrors, saveParagraphErrors } from '../lib/paragraphs/storage';
+import * as db from '../lib/db';
+import { isSupabaseConfigured } from '../lib/supabase';
 import ErrorExplanation from '../components/paragraphs/ErrorExplanation';
 
 const ERROR_TYPE_LABELS: Record<string, string> = {
@@ -82,6 +84,9 @@ export default function ParagraphErrors() {
     );
     setErrors(updated);
     saveParagraphErrors(updated);
+    if (isSupabaseConfigured()) {
+      db.saveUserData('paragraphErrors', updated);
+    }
   }, [errors]);
 
   if (errors.length === 0) {

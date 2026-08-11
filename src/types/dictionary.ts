@@ -12,7 +12,7 @@ export interface DictionaryEntry {
   tags: string[];
 }
 
-export type Category = 'office' | 'official' | 'it_ai' | 'general';
+export type Category = string;
 export type ParagraphCategory = 'general' | 'office' | 'official' | 'it_ai' | 'route';
 export type Status = 'new' | 'learning' | 'mastered';
 export type KnowledgeLevel = 0 | 1 | 2 | 3 | 4 | 5;

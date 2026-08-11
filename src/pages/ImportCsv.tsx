@@ -4,6 +4,8 @@ import { parseCsv, validateCsv, mergeEntries, entriesToCsv } from '../lib/csv';
 import { parseGrammarRulesCsv, validateGrammarRulesCsv } from '../lib/grammarRules';
 import { parseParagraphsCsv, validateParagraphsCsv, mergeParagraphEntries } from '../lib/paragraphs/csv';
 import { loadParagraphEntries, saveParagraphEntries } from '../lib/paragraphs/storage';
+import * as db from '../lib/db';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface ImportCsvProps {
   entries: DictionaryEntry[];
@@ -107,6 +109,9 @@ export default function ImportCsv({ entries, onImport }: ImportCsvProps) {
       const existing = loadParagraphEntries();
       const { merged, added, updated } = mergeParagraphEntries(existing, paragraphPreview);
       saveParagraphEntries(merged);
+      if (isSupabaseConfigured()) {
+        db.saveUserData('paragraphs', merged);
+      }
       setParagraphImportResult({ added, updated });
       setParagraphPreview(null);
     }

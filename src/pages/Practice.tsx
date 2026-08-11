@@ -69,7 +69,9 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
 
     const mainPool = onlyDifficult ? difficult : pool;
 
-    const targetSize = sessionSize === 0 ? mainPool.length : Math.min(sessionSize, mainPool.length);
+    const targetSize = (filterIds && filterIds.length > 0) || sessionSize === 0
+      ? mainPool.length
+      : Math.min(sessionSize, mainPool.length);
 
     function shuffle(arr: DictionaryEntry[]) {
       for (let i = arr.length - 1; i > 0; i--) {

@@ -1,4 +1,5 @@
 import ProgressBar from '../components/ProgressBar';
+import FeaturesCards from '../components/ui/feature-shader-cards';
 import type { DictionaryEntry, ProgressEntry, PracticeMode } from '../types/dictionary';
 import { needsReview, isMastered } from '../lib/spacedRepetition';
 import { loadStreak, loadDailyStats } from '../lib/storage';
@@ -34,6 +35,13 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
     return p && needsReview(p) && p.reviewStatus !== 'mastered';
   }).length;
 
+  const dueIds = entries
+    .filter(e => {
+      const p = progress[e.id];
+      return p && needsReview(p) && p.reviewStatus !== 'mastered';
+    })
+    .map(e => e.id);
+
   const todayCorrect = dailyStats.correct;
   const todayWrong = dailyStats.wrong;
   const totalAnswered = todayCorrect + todayWrong;
@@ -56,9 +64,10 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <>
+      <div className="max-w-2xl mx-auto space-y-6">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="card text-center card-hover" onClick={() => onGoToPractice({ mode: 'flashcard' })}>
+        <div className="card text-center card-hover" onClick={() => onGoToPractice({ ids: dueIds, mode: 'flashcard' })}>
           <div className="text-2xl font-bold text-[var(--color-primary)]">{dueForReview}</div>
           <div className="text-xs text-[var(--color-text-secondary)]">На повторение</div>
         </div>
@@ -97,9 +106,14 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
       <div className="card">
         <h2 className="text-lg font-semibold mb-3">Сегодня на повторение</h2>
         {dueForReview > 0 ? (
-          <p className="text-[var(--color-text-secondary)] mb-3">
-            У вас {dueForReview} карточек для повторения сегодня
-          </p>
+          <>
+            <p className="text-[var(--color-text-secondary)] mb-3">
+              У вас {dueForReview} карточек для повторения сегодня
+            </p>
+            <button className="btn btn-primary text-sm" onClick={() => onGoToPractice({ ids: dueIds, mode: 'flashcard' })}>
+              Повторить ({dueForReview})
+            </button>
+          </>
         ) : (
           <p className="text-[var(--color-text-secondary)] mb-3">На сегодня всё! Отличная работа.</p>
         )}
@@ -142,6 +156,9 @@ export default function Dashboard({ entries, progress, onGoToPractice, onNavigat
           Повторить сложные
         </button>
       </div>
-    </div>
+      </div>
+
+      <FeaturesCards />
+    </>
   );
 }
