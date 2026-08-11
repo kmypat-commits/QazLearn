@@ -9,6 +9,7 @@ interface WordsProps {
   entries: DictionaryEntry[];
   progress: Record<number, ProgressEntry>;
   onProgressUpdate: (entryId: number, rating: 'dont-know' | 'hard' | 'good' | 'easy') => void;
+  onMarkMastered?: (entryId: number) => void;
   onGoToPractice?: (options?: { ids?: number[]; mode?: 'flashcard' }) => void;
   initialStatus?: string;
 }
@@ -27,7 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: 'Общее',
 };
 
-export default function Words({ entries, progress, onProgressUpdate, onGoToPractice, initialStatus }: WordsProps) {
+export default function Words({ entries, progress, onProgressUpdate, onMarkMastered, onGoToPractice, initialStatus }: WordsProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [feedback, setFeedback] = useState<Record<number, 'dont-know' | 'hard' | 'good' | 'easy' | null>>({});
   const [search, setSearch] = useState('');
@@ -256,6 +257,9 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
                   </button>
                   <button className="btn btn-success text-xs py-1.5 px-3" onClick={() => handleStatusChange(entry, 'good')}>
                     Знаю
+                  </button>
+                  <button className="btn btn-mastered text-xs py-1.5 px-3" onClick={() => onMarkMastered?.(entry.id)}>
+                    Освоено
                   </button>
                 </div>
               </div>

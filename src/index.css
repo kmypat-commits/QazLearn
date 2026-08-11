@@ -10,6 +10,7 @@
   --color-border: #e6e8f2;
   --color-primary: #6d5ef0; /* Violet-indigo */
   --color-primary-hover: #5a4adf;
+  --color-mastered: #8b5cf6;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
@@ -25,6 +26,7 @@
   --color-border: #272d42;
   --color-primary: #8b7df8;
   --color-primary-hover: #9d91fa;
+  --color-mastered: #a78bfa;
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
@@ -118,6 +120,14 @@ body {
   color: #fff;
 }
 .btn-danger:hover {
+  opacity: 0.92;
+}
+
+.btn-mastered {
+  background: linear-gradient(135deg, var(--color-mastered), color-mix(in srgb, var(--color-mastered) 70%, #fff));
+  color: #fff;
+}
+.btn-mastered:hover {
   opacity: 0.92;
 }
 

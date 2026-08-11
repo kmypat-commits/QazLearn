@@ -9,6 +9,7 @@ interface PhrasesProps {
   entries: DictionaryEntry[];
   progress: Record<number, ProgressEntry>;
   onProgressUpdate: (entryId: number, rating: 'dont-know' | 'hard' | 'good' | 'easy') => void;
+  onMarkMastered?: (entryId: number) => void;
   onGoToPractice?: (options?: { ids?: number[]; mode?: 'flashcard' }) => void;
   initialStatus?: string;
 }
@@ -27,7 +28,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   general: 'Общее',
 };
 
-export default function Phrases({ entries, progress, onProgressUpdate, onGoToPractice, initialStatus }: PhrasesProps) {
+export default function Phrases({ entries, progress, onProgressUpdate, onMarkMastered, onGoToPractice, initialStatus }: PhrasesProps) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<Category | ''>('');
   const [status, setStatus] = useState<Status | ''>((initialStatus as Status) || '');
@@ -258,6 +259,9 @@ export default function Phrases({ entries, progress, onProgressUpdate, onGoToPra
                   </button>
                   <button className="btn btn-success text-xs py-1.5 px-3" onClick={() => handleStatusChange(entry, 'good')}>
                     Знаю
+                  </button>
+                  <button className="btn btn-mastered text-xs py-1.5 px-3" onClick={() => onMarkMastered?.(entry.id)}>
+                    Освоено
                   </button>
                 </div>
               </div>

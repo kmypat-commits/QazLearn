@@ -15,7 +15,7 @@ import {
   saveParagraphErrors,
 } from './lib/paragraphs/storage';
 import * as db from './lib/db';
-import { updateProgress, needsReview } from './lib/spacedRepetition';
+import { updateProgress, needsReview, markMastered } from './lib/spacedRepetition';
 import Dashboard from './pages/Dashboard';
 import Words from './pages/Words';
 import Phrases from './pages/Phrases';
@@ -210,6 +210,25 @@ export default function App() {
         recordAnswerLocal(false);
         db.recordAnswer(false);
       }
+      if (isSupabaseConfigured()) {
+        db.updateStreak();
+      } else {
+        updateStreakLocal();
+      }
+      return newProgress;
+    });
+  }, []);
+
+  const handleMarkMastered = useCallback((entryId: number) => {
+    setProgress(prev => {
+      const newProgress = { ...prev };
+      const prog = getOrCreateProgress(entryId, newProgress);
+      const updated = markMastered({ ...prog });
+      newProgress[entryId] = updated;
+      saveProgressLocal(newProgress);
+      db.saveProgressEntry(entryId, updated);
+      recordAnswerLocal(true);
+      db.recordAnswer(true);
       if (isSupabaseConfigured()) {
         db.updateStreak();
       } else {
@@ -453,8 +472,8 @@ export default function App() {
 
         <main className="flex-1 px-4 py-6 overflow-y-auto">
           {currentPage === 'dashboard' && <Dashboard entries={entries} progress={progress} onGoToPractice={goToPractice} onNavigate={(p) => setCurrentPage(p as Page)} />}
-          {currentPage === 'words' && <Words key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
-          {currentPage === 'phrases' && <Phrases key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
+          {currentPage === 'words' && <Words key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onMarkMastered={handleMarkMastered} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
+          {currentPage === 'phrases' && <Phrases key={pageFilter.status || 'all'} entries={entries} progress={progress} onProgressUpdate={handleProgressUpdate} onMarkMastered={handleMarkMastered} onGoToPractice={goToPractice} initialStatus={pageFilter.status as any} />}
           {currentPage === 'rules' && <Rules onGoToPractice={goToPractice} />}
           {currentPage === 'paragraphs' && <Paragraphs />}
           {currentPage === 'paragraphErrors' && <ParagraphErrors />}

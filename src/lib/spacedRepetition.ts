@@ -72,3 +72,15 @@ export function isMastered(progress: ProgressEntry): boolean {
     progress.correctAnswers >= 10
   );
 }
+
+export function markMastered(progress: ProgressEntry): ProgressEntry {
+  const now = new Date().toISOString();
+  progress.lastReviewedAt = now;
+  progress.attempts = Math.max(progress.attempts + 1, 10);
+  progress.correctAnswers = Math.max(progress.correctAnswers + 1, 10);
+  progress.consecutiveCorrect = Math.max(progress.consecutiveCorrect + 1, 3);
+  progress.knowledgeLevel = 5 as KnowledgeLevel;
+  progress.reviewStatus = 'mastered';
+  progress.nextReviewAt = new Date(Date.now() + 30 * 86400000).toISOString();
+  return progress;
+}
