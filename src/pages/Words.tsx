@@ -96,7 +96,11 @@ export default function Words({ entries, progress, onProgressUpdate, onGoToPract
         return rs === 'learning' || rs === 'review';
       });
     } else if (status) {
-      result = result.filter(e => e.status === status || progress[e.id]?.reviewStatus === status);
+      result = result.filter(e => {
+        const rs = progress[e.id]?.reviewStatus;
+        if (rs) return rs === status;
+        return e.status === status;
+      });
     }
     if (difficulty) result = result.filter(e => e.difficulty === difficulty);
 
