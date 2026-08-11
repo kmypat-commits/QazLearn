@@ -42,12 +42,17 @@ export default function Practice({ entries, progress, onProgressUpdate, filterId
   const startSession = useCallback(() => {
     let pool = entries;
 
-    if (mode === 'phrase-build') {
-      pool = pool.filter(e => e.kz.split(/\s+/).filter(Boolean).length >= 2);
-    }
-
     if (filterIds && filterIds.length > 0) {
       pool = pool.filter(e => filterIds.includes(e.id));
+    } else {
+      pool = pool.filter(e => {
+        const p = progress[e.id];
+        return !p || p.reviewStatus !== 'mastered';
+      });
+    }
+
+    if (mode === 'phrase-build') {
+      pool = pool.filter(e => e.kz.split(/\s+/).filter(Boolean).length >= 2);
     }
 
     if (onlyErrors) {
